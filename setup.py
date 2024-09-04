@@ -11,7 +11,11 @@ setup(
     extras_require={
         'apple': [
             # Optional dependencies for Apple/Mac
-            'apple_gpu==0.3.0'
+            'apple_gpu==0.3.*'
+        ],
+        'linux': [
+            # Optional dependencies for Linux
+            'pyamdgpuinfo==2.1.*'
         ]
     }
 )
