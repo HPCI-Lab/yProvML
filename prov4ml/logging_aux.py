@@ -11,7 +11,7 @@ from prov4ml.provenance.context import Context
 from prov4ml.datamodel.cumulative_metrics import FoldOperation
 from prov4ml.constants import PROV4ML_DATA
     
-def log_metric(key: str, value: float, context:Context, step: Optional[int] = None, source: LoggingItemKind = None) -> None:
+def log_metric(key: str, value: float, context:Context, step: Optional[int] = 0, source: LoggingItemKind = None) -> None:
     """
     Logs a metric with the specified key, value, and context.
 

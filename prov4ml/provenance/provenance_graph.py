@@ -156,7 +156,7 @@ def save_metric_from_file(
             metric_epoch_data = {}
             for line in lines[1:]:
                 epoch, value, timestamp = line.split(',')
-                epoch = int(epoch)
+                epoch = int(epoch) 
                 value = float(value)
                 timestamp = int(timestamp)
                 if int(epoch) not in metric_epoch_data:
