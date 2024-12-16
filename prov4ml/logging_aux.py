@@ -1,8 +1,6 @@
 import os
-import torch
 import warnings
 
-from torch.utils.data import DataLoader, Subset, Dataset
 from typing import Any, Optional, Union
 
 from prov4ml.datamodel.attribute_type import LoggingItemKind
@@ -60,53 +58,49 @@ def log_param(key: str, value: Any) -> None:
     """
     PROV4ML_DATA.add_parameter(key,value)
 
-def log_model_memory_footprint(model: Union[torch.nn.Module, Any], model_name: str = "default") -> None:
+def log_model_memory_footprint(model: Any, model_name: str = "default") -> None:
     """Logs the memory footprint of the provided model.
     
     Args:
-        model (Union[torch.nn.Module, Any]): The model whose memory footprint is to be logged.
-        model_name (str, optional): Name of the model. Defaults to "default".
 
     Returns:
         None
     """
     log_param("model_name", model_name)
 
-    total_params = sum(p.numel() for p in model.parameters())
-    try: 
-        if hasattr(model, "trainer"): 
-            precision_to_bits = {"64": 64, "32": 32, "16": 16, "bf16": 16}
-            if hasattr(model.trainer, "precision"):
-                precision = precision_to_bits.get(model.trainer.precision, 32)
-            else: 
-                precision = 32
-        else: 
-            precision = 32
-    except RuntimeError: 
-        warnings.warn("Could not determine precision, defaulting to 32 bits. Please make sure to provide a model with a trainer attached, this is often due to calling this before the trainer.fit() method")
-        precision = 32
-    
-    precision_megabytes = precision / 8 / 1e6
+    # TODO: find way to log all data indipendently of librabry
 
-    memory_per_model = total_params * precision_megabytes
-    memory_per_grad = total_params * 4 * 1e-6
-    memory_per_optim = total_params * 4 * 1e-6
+    # total_params = sum(p.numel() for p in model.parameters())
+    # try: 
+    #     if hasattr(model, "trainer"): 
+    #         precision_to_bits = {"64": 64, "32": 32, "16": 16, "bf16": 16}
+    #         if hasattr(model.trainer, "precision"):
+    #             precision = precision_to_bits.get(model.trainer.precision, 32)
+    #         else: 
+    #             precision = 32
+    #     else: 
+    #         precision = 32
+    # except RuntimeError: 
+    #     warnings.warn("Could not determine precision, defaulting to 32 bits. Please make sure to provide a model with a trainer attached, this is often due to calling this before the trainer.fit() method")
+    #     precision = 32
     
-    log_param("total_params", total_params)
-    log_param("memory_of_model", memory_per_model)
-    log_param("total_memory_load_of_model", memory_per_model + memory_per_grad + memory_per_optim)
+    # precision_megabytes = precision / 8 / 1e6
 
-def log_model(model: Union[torch.nn.Module, Any], model_name: str = "default", log_model_info: bool = True, log_as_artifact=True) -> None:
+    # memory_per_model = total_params * precision_megabytes
+    # memory_per_grad = total_params * 4 * 1e-6
+    # memory_per_optim = total_params * 4 * 1e-6
+    
+    # log_param("total_params", total_params)
+    # log_param("memory_of_model", memory_per_model)
+    # log_param("total_memory_load_of_model", memory_per_model + memory_per_grad + memory_per_optim)
+
+def log_model(model: Any, model_name: str = "default", log_model_info: bool = True, log_as_artifact=True) -> None:
     """Logs the provided model as artifact and logs memory footprint of the model. 
     
     Args:
-        model (Union[torch.nn.Module, Any]): The model to be logged.
-        model_name (str, optional): Name of the model. Defaults to "default".
-        log_model_info (bool, optional): Whether to log model memory footprint. Defaults to True.
-        log_as_artifact (bool, optional): Whether to log the model as an artifact. Defaults to True.
     """
-    if log_model_info:
-        log_model_memory_footprint(model, model_name)
+    # if log_model_info:
+    #     log_model_memory_footprint(model, model_name)
 
     if log_as_artifact:
         save_model_version(model, model_name, Context.EVALUATION)
@@ -209,7 +203,7 @@ def log_artifact(
     PROV4ML_DATA.add_artifact(artifact_path, step=step, context=context, timestamp=timestamp)
 
 def save_model_version(
-        model: Union[torch.nn.Module, Any], 
+        model: Any, 
         model_name: str, 
         context: Context, 
         step: Optional[int] = None, 
@@ -219,10 +213,6 @@ def save_model_version(
     Saves the state dictionary of the provided model and logs it as an artifact.
     
     Parameters:
-        model (torch.nn.Module): The PyTorch model to be saved.
-        model_name (str): The name under which to save the model.
-        context (Context): The context in which the model is saved.
-        step (Optional[int]): The step or epoch number associated with the saved model. Defaults to None.
         timestamp (Optional[int]): The timestamp associated with the saved model. Defaults to None.
 
     Returns:
@@ -236,10 +226,10 @@ def save_model_version(
     # count all models with the same name stored at "path"
     num_files = len([file for file in os.listdir(path) if str(file).startswith(model_name)])
 
-    torch.save(model.state_dict(), f"{path}/{model_name}_{num_files}.pth")
+    # TODO: find way to save model
     log_artifact(f"{path}/{model_name}_{num_files}.pth", context=context, step=step, timestamp=timestamp)
 
-def log_dataset(dataset : Union[DataLoader, Subset, Dataset], label : str): 
+def log_dataset(dataset : Any, label : str): 
     """
     Logs dataset statistics such as total samples and total steps.
 
@@ -251,19 +241,19 @@ def log_dataset(dataset : Union[DataLoader, Subset, Dataset], label : str):
         None
     """
     # handle datasets from DataLoader
-    if isinstance(dataset, DataLoader):
-        dl = dataset
-        dataset = dl.dataset
+    # if isinstance(dataset, DataLoader):
+    #     dl = dataset
+    #     dataset = dl.dataset
 
-        log_param(f"{label}_dataset_stat_batch_size", dl.batch_size)
-        log_param(f"{label}_dataset_stat_num_workers", dl.num_workers)
-        # log_param(f"{label}_dataset_stat_shuffle", dl.shuffle)
-        log_param(f"{label}_dataset_stat_total_steps", len(dl))
+    #     log_param(f"{label}_dataset_stat_batch_size", dl.batch_size)
+    #     log_param(f"{label}_dataset_stat_num_workers", dl.num_workers)
+    #     # log_param(f"{label}_dataset_stat_shuffle", dl.shuffle)
+    #     log_param(f"{label}_dataset_stat_total_steps", len(dl))
 
-    elif isinstance(dataset, Subset):
-        dl = dataset
-        dataset = dl.dataset
-        log_param(f"{label}_dataset_stat_total_steps", len(dl))
+    # elif isinstance(dataset, Subset):
+    #     dl = dataset
+    #     dataset = dl.dataset
+    #     log_param(f"{label}_dataset_stat_total_steps", len(dl))
 
     total_samples = len(dataset)
     log_param(f"{label}_dataset_stat_total_samples", total_samples)

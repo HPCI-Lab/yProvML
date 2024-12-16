@@ -1,6 +1,5 @@
 
 import os
-import torch
 from typing import Optional
 import time
 
@@ -45,9 +44,6 @@ def get_global_rank() -> Optional[int]:
     returns the global rank of the current process accordingly. The function supports two types of
     distributed environments:
 
-    1. **PyTorch Distributed**: If PyTorch's distributed package is available and initialized,
-       it retrieves the global rank of the process using `torch.distributed.get_rank()`.
-
     2. **SLURM**: If the environment variable `SLURM_PROCID` is present, it assumes that the process is
        managed by SLURM and retrieves the local rank from this environment variable.
 
@@ -64,11 +60,7 @@ def get_global_rank() -> Optional[int]:
     0
     >>> get_global_rank()
     None
-    """
-    # if on torch.distributed, return the rank
-    if torch.distributed.is_available() and torch.distributed.is_initialized():
-        return torch.distributed.get_rank()
-    
+    """    
     # if on slurm, return the local rank
     if "SLURM_PROCID" in os.environ:
         return int(os.getenv("SLURM_PROCID", None))
@@ -90,6 +82,4 @@ def get_runtime_type():
     >>> get_runtime_type()
     "single_core"
     """
-    if torch.distributed.is_available() and torch.distributed.is_initialized():
-        return "distributed"
     return "single_core"

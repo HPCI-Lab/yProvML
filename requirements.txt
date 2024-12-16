@@ -3,14 +3,11 @@ fvcore
 geocoder
 gpustat
 GPUtil
-lightning
 netCDF4
 numpy
 pandas
 psutil
 pydot
-torch
-torchvision
 tqdm
 typing_extensions
 prov
