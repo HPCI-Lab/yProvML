@@ -3,6 +3,9 @@ import warnings
 
 from typing import Any, Optional, Union
 
+import tensorflow as tf
+import keras
+
 from prov4ml.datamodel.attribute_type import LoggingItemKind
 from prov4ml.utils import energy_utils, flops_utils, system_utils, time_utils, funcs
 from prov4ml.provenance.context import Context
@@ -68,39 +71,50 @@ def log_model_memory_footprint(model: Any, model_name: str = "default") -> None:
     """
     log_param("model_name", model_name)
 
-    # TODO: find way to log all data indipendently of librabry
+    def is_keras_or_tf_model(obj):
+        model_classes = (tf.keras.Model, keras.Model)#tf.estimator.Estimator
+        return isinstance(obj, model_classes)
 
-    # total_params = sum(p.numel() for p in model.parameters())
-    # try: 
-    #     if hasattr(model, "trainer"): 
-    #         precision_to_bits = {"64": 64, "32": 32, "16": 16, "bf16": 16}
-    #         if hasattr(model.trainer, "precision"):
-    #             precision = precision_to_bits.get(model.trainer.precision, 32)
-    #         else: 
-    #             precision = 32
-    #     else: 
-    #         precision = 32
-    # except RuntimeError: 
-    #     warnings.warn("Could not determine precision, defaulting to 32 bits. Please make sure to provide a model with a trainer attached, this is often due to calling this before the trainer.fit() method")
-    #     precision = 32
+    if is_keras_or_tf_model(model): 
+        trainable_params = sum([tf.size(v).numpy() for v in model.trainable_variables])
+        non_trainable_params = sum([tf.size(v).numpy() for v in model.non_trainable_variables])
+        log_param("trainable_params", trainable_params)
+        log_param("non_trainable_params", non_trainable_params)
+        total_params = trainable_params + non_trainable_params
+    elif hasattr(model, "parameters"): 
+        total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    else: 
+        total_params = -1
+    try: 
+        if hasattr(model, "trainer"): 
+            precision_to_bits = {"64": 64, "32": 32, "16": 16, "bf16": 16}
+            if hasattr(model.trainer, "precision"):
+                precision = precision_to_bits.get(model.trainer.precision, 32)
+            else: 
+                precision = 32
+        else: 
+            precision = 32
+    except RuntimeError: 
+        warnings.warn("Could not determine precision, defaulting to 32 bits. Please make sure to provide a model with a trainer attached, this is often due to calling this before the trainer.fit() method")
+        precision = 32
     
-    # precision_megabytes = precision / 8 / 1e6
+    precision_megabytes = precision / 8 / 1e6
 
-    # memory_per_model = total_params * precision_megabytes
-    # memory_per_grad = total_params * 4 * 1e-6
-    # memory_per_optim = total_params * 4 * 1e-6
+    memory_per_model = total_params * precision_megabytes
+    memory_per_grad = total_params * 4 * 1e-6
+    memory_per_optim = total_params * 4 * 1e-6
     
-    # log_param("total_params", total_params)
-    # log_param("memory_of_model", memory_per_model)
-    # log_param("total_memory_load_of_model", memory_per_model + memory_per_grad + memory_per_optim)
+    log_param("total_params", total_params)
+    log_param("memory_of_model", memory_per_model)
+    log_param("total_memory_load_of_model", memory_per_model + memory_per_grad + memory_per_optim)
 
 def log_model(model: Any, model_name: str = "default", log_model_info: bool = True, log_as_artifact=True) -> None:
     """Logs the provided model as artifact and logs memory footprint of the model. 
     
     Args:
     """
-    # if log_model_info:
-    #     log_model_memory_footprint(model, model_name)
+    if log_model_info:
+        log_model_memory_footprint(model, model_name)
 
     if log_as_artifact:
         save_model_version(model, model_name, Context.EVALUATION)
@@ -226,8 +240,9 @@ def save_model_version(
     # count all models with the same name stored at "path"
     num_files = len([file for file in os.listdir(path) if str(file).startswith(model_name)])
 
-    # TODO: find way to save model
-    log_artifact(f"{path}/{model_name}_{num_files}.pth", context=context, step=step, timestamp=timestamp)
+    log_artifact(f"{path}/{model_name}_{num_files}..weights.h5", context=context, step=step, timestamp=timestamp)
+    model.save_weights(f"{path}/{model_name}_{num_files}..weights.h5")
+
 
 def log_dataset(dataset : Any, label : str): 
     """
@@ -240,23 +255,41 @@ def log_dataset(dataset : Any, label : str):
     Returns:
         None
     """
-    # handle datasets from DataLoader
-    # if isinstance(dataset, DataLoader):
-    #     dl = dataset
-    #     dataset = dl.dataset
 
-    #     log_param(f"{label}_dataset_stat_batch_size", dl.batch_size)
-    #     log_param(f"{label}_dataset_stat_num_workers", dl.num_workers)
-    #     # log_param(f"{label}_dataset_stat_shuffle", dl.shuffle)
-    #     log_param(f"{label}_dataset_stat_total_steps", len(dl))
+    # Check if dataset is already batched
+    batched = isinstance(dataset.element_spec, tuple) or isinstance(dataset.element_spec, dict)
 
-    # elif isinstance(dataset, Subset):
-    #     dl = dataset
-    #     dataset = dl.dataset
-    #     log_param(f"{label}_dataset_stat_total_steps", len(dl))
+    # Inspect dataset parameters
+    try:
+        batch_size = dataset.element_spec[0].shape[0] if batched else 1
+    except Exception:
+        batch_size = "Unknown"
 
-    total_samples = len(dataset)
-    log_param(f"{label}_dataset_stat_total_samples", total_samples)
+    # Estimate dataset size (if it has a defined size)
+    try:
+        total_steps = dataset.cardinality().numpy()  # TensorFlow 2.1+ supports this
+        if total_steps == tf.data.experimental.INFINITE_CARDINALITY:
+            total_steps = "Infinite"
+            num_samples = "Infinite"
+        else:
+            num_samples = total_steps * (batch_size if batch_size != "Unknown" else 1)    
+    except Exception:
+        total_steps = "Unknown"
+        num_samples = "Unknown"
+
+    # Log parameters
+    log_param(f"{label}_dataset_stat_batch_size", batch_size)
+    log_param(f"{label}_dataset_stat_total_steps", total_steps)
+
+    # Check if shuffle was applied
+    # shuffle_applied = False
+    # for op in dataset._variant_tracker._trackable_children.values():
+    #     if isinstance(op, tf.data.experimental.RandomDataset):
+    #         shuffle_applied = True
+    #         break
+    # log_param(f"{label}_dataset_stat_shuffle", shuffle_applied)
+
+    log_param(f"{label}_dataset_stat_total_samples", num_samples)
 
 def register_final_metric(
         metric_name : str,

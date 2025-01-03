@@ -22,9 +22,8 @@ prov4ml.start_run(
     with_info=True,
 )
 
-prov4ml.log_param("ds_train", ds_train)
-prov4ml.log_param("ds_test", ds_test)
-
+prov4ml.log_dataset(ds_train, "ds_train")
+prov4ml.log_dataset(ds_test, "ds_test")
 
 def normalize_img(image, label):
     """Normalizes images: `uint8` -> `float32`."""
