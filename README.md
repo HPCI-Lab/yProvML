@@ -1,4 +1,11 @@
-# yProv4ML
+
+<table align="center">
+  <tr>
+    <td><img src="./assets/HPCI-Lab.png" alt="HPCI Lab Logo" width="100"></td>
+    <td><h1>yProv4ML</h1></td>
+  </tr>
+</table>
+
 
 [![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)](https://opensource.org/licenses/)
 
