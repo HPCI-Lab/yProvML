@@ -105,6 +105,7 @@ class Prov4MLData:
 
         self.save_metrics_after_n_logs = 100
         self.TMP_DIR = "tmp"
+        self.TMP_SEP = "\t"
 
     def init(
             self, 
@@ -321,7 +322,7 @@ class Prov4MLData:
         if not os.path.exists(self.TMP_DIR):
             os.makedirs(self.TMP_DIR, exist_ok=True)
 
-        metric.save_to_file(self.TMP_DIR, process=self.global_rank)
+        metric.save_to_file(self.TMP_DIR, process=self.global_rank, sep=self.TMP_SEP)
 
     def save_all_metrics(self) -> None:
         """

@@ -1,5 +1,6 @@
 import os
 import torch
+import json
 import warnings
 
 from torch.utils.data import DataLoader, Subset, Dataset
@@ -11,7 +12,13 @@ from prov4ml.provenance.context import Context
 from prov4ml.datamodel.cumulative_metrics import FoldOperation
 from prov4ml.constants import PROV4ML_DATA
     
-def log_metric(key: str, value: float, context:Context, step: Optional[int] = 0, source: LoggingItemKind = None) -> None:
+def log_metric(
+        key: str, 
+        value: float, 
+        context:Context, 
+        step: Optional[int] = 0, 
+        source: LoggingItemKind = None, 
+    ) -> None:
     """
     Logs a metric with the specified key, value, and context.
 
@@ -96,7 +103,66 @@ def log_model_memory_footprint(model: Union[torch.nn.Module, Any], model_name: s
     log_param("memory_of_model", memory_per_model)
     log_param("total_memory_load_of_model", memory_per_model + memory_per_grad + memory_per_optim)
 
-def log_model(model: Union[torch.nn.Module, Any], model_name: str = "default", log_model_info: bool = True, log_as_artifact=True) -> None:
+
+def safe_get_attr(dic, node, attr, attr_label=None):
+    if attr_label is None: 
+        attr_label = str(attr) 
+
+    try: 
+        if attr == "type": 
+            dic[attr_label] = str(type(node))
+        elif attr == "weight.dtype": 
+            dic[attr_label] = str(node.weight.dtype)
+        else: 
+            dic[attr_label] = str(getattr(node, attr))
+    except AttributeError: 
+        pass
+        # print(dic, node, attr, attr_label)
+
+
+def nested_model(m: torch.nn.Module):
+    children = dict(m.named_children())
+    output = {}
+    if children == {}:
+        node = {}
+        safe_get_attr(node, m, "type", attr_label="layer_type")
+        safe_get_attr(node, m, "in_features")
+        safe_get_attr(node, m, "out_features")
+        safe_get_attr(node, m, "in_channels")
+        safe_get_attr(node, m, "out_channels")
+        safe_get_attr(node, m, "kernel_size")
+        safe_get_attr(node, m, "stride")
+        safe_get_attr(node, m, "padding")
+        # safe_get_attr(node, m, "bias", attr_label="layer_bias")
+        safe_get_attr(node, m, "weight.dtype", attr_label="dtype")
+        return node
+    else:
+        for name, child in children.items():
+            try:
+                output[name] = nested_model(child)
+            except TypeError:
+                output[name] = nested_model(child)
+
+    return output
+
+def log_model_layers_description(model: Union[torch.nn.Module, Any], model_name : str): 
+    mo = nested_model(model)
+    
+    path = os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, model_name)
+    if not os.path.exists(path):
+        os.makedirs(path, exist_ok=True)
+    with open(f"{path}/{model_name}_layers_description.json", "w") as fp:
+        json.dump(mo , fp) 
+
+    log_artifact(f"{path}/{model_name}_layers_description.json", Context.EVALUATION)
+
+def log_model(
+        model: Union[torch.nn.Module, Any], 
+        model_name: str = "default", 
+        log_model_info: bool = True, 
+        log_model_layers : bool = False,
+        log_as_artifact : bool =True, 
+    ) -> None:
     """Logs the provided model as artifact and logs memory footprint of the model. 
     
     Args:
@@ -107,6 +173,9 @@ def log_model(model: Union[torch.nn.Module, Any], model_name: str = "default", l
     """
     if log_model_info:
         log_model_memory_footprint(model, model_name)
+
+    if log_model_layers: 
+        log_model_layers_description(model, model_name)
 
     if log_as_artifact:
         save_model_version(model, model_name, Context.EVALUATION)

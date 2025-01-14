@@ -1,4 +1,11 @@
-# yProv4ML
+
+<table align="center">
+  <tr>
+    <td><img src="./assets/HPCI-Lab.png" alt="HPCI Lab Logo" width="100"></td>
+    <td><h1>yProv4ML</h1></td>
+  </tr>
+</table>
+
 
 [![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)](https://opensource.org/licenses/)
 
@@ -32,20 +39,7 @@ Several runs can be executed in the same experiment. All runs will be saved in t
 
 # Documentation
 
-For detailed information, please refer to the following documentation files:
-
-- [Installation](./wiki/installation.md)
-- [Setup](./wiki/setup.md)
-- [Provenance Graph](./wiki/prov_graph.md)
-- [Logging](./wiki/logging.md)
-- [Prov Collection](./wiki/prov_collection.md)
-- [Carbon Metrics](./wiki/carbon.md)
-- [System Metrics](./wiki/system.md)
-- [Time Metrics](./wiki/time.md)
-- [Registering Metrics](./wiki/registering_metrics.md)
-- [Usage with PyTorch](./wiki/usage_pytorch.md)
-- [Usage with Lightning](./wiki/usage_lightning.md)
-- [Usage with ItwinAI Logger](./wiki/usage_itwinAI_logger.md)
+For detailed information, please refer to the [Documentation](https://hpci-lab.github.io/yProv4ML.github.io/)
 
 # Contributors
 
