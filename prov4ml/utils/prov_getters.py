@@ -9,11 +9,18 @@ def get_metrics(data, keyword=None):
     else:
         return [m for m in ms if keyword in m]
 
-def get_metric(data, metric, time_in_sec=False, time_incremental=False):
-    try: 
+def get_metric(data, metric, time_in_sec=False, time_incremental=False, start_at=None, end_at=None):
+    try:
         epochs = eval(data["entity"][metric]["prov-ml:metric_epoch_list"])
         values = eval(data["entity"][metric]["prov-ml:metric_value_list"])
         times = eval(data["entity"][metric]["prov-ml:metric_timestamp_list"])
+
+        start_at = 0 if start_at is None else start_at
+        end_at = len(epochs) if end_at is None else end_at        
+
+        epochs = epochs[start_at:end_at]
+        values = values[start_at:end_at]
+        times = times[start_at:end_at]
     except: 
         return pd.DataFrame(columns=["epoch", "value", "time"])
     
