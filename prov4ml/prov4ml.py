@@ -19,6 +19,7 @@ def start_run_ctx(
         rank : Optional[int] = None, 
         create_graph: Optional[bool] = False, 
         create_svg: Optional[bool] = False, 
+        metrics_file_type: Optional[str] = "zarr"
     ): 
     """
     Context manager for starting and ending a run, initializing provenance data collection and optionally creating visualizations.
@@ -44,6 +45,8 @@ def start_run_ctx(
         Must be True only if `create_graph` is also True.
     create_provenance_collection : Optional[bool], optional
         Whether to create a collection of provenance data from all runs. Default is False.
+    metrics_file_type : Optional[str], optional
+        The type of file to save metrics. Defaults to "zarr".
 
     Raises:
     -------
@@ -71,6 +74,7 @@ def start_run_ctx(
         collect_all_processes=collect_all_processes, 
         save_after_n_logs=save_after_n_logs, 
         rank=rank, 
+        metrics_file_type=metrics_file_type
     )
    
     energy_utils._carbon_init()
@@ -99,6 +103,7 @@ def start_run(
         collect_all_processes: Optional[bool] = False,
         save_after_n_logs: Optional[int] = 100,
         rank : Optional[int] = None, 
+        metrics_file_type: Optional[str] = "zarr"
     ) -> None:
     """
     Initializes the provenance data collection and sets up various utilities for tracking.
@@ -117,6 +122,8 @@ def start_run(
         The number of logs after which to save metrics. Default is 100.
     rank : Optional[int], optional
         The rank of the current process in a distributed setting. If not provided, defaults to None.
+    metrics_file_type : Optional[str], optional
+        The type of file to save metrics. Defaults to "zarr".
 
     Returns:
     --------
@@ -128,7 +135,8 @@ def start_run(
         user_namespace=prov_user_namespace, 
         collect_all_processes=collect_all_processes, 
         save_after_n_logs=save_after_n_logs, 
-        rank=rank
+        rank=rank,
+        metrics_file_type=metrics_file_type
     )
 
     energy_utils._carbon_init()

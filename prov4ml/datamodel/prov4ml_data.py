@@ -36,18 +36,20 @@ class Prov4MLData:
         The directory where the experiment's data is stored.
     ARTIFACTS_DIR : str
         The directory where the artifacts are stored.
+    METRICS_DIR : str
+        The directory where the metrics are stored.
     USER_NAMESPACE : str
         The user namespace for organizing experiments.
     RUN_ID : int
         The identifier for the current run of the experiment.
+    METRICS_FILE_TYPE : str
+        The file type used to store metrics.
     global_rank : optional
         The global rank of the current process in a distributed setting.
     is_collecting : bool
         A flag indicating whether the provenance data collection is active.
     save_metrics_after_n_logs : int
         The number of logs after which metrics are saved.
-    TMP_DIR : str
-        The temporary directory used during the experiment.
 
     Methods:
     --------
@@ -81,7 +83,7 @@ class Prov4MLData:
     get_final_model() -> Optional[ArtifactInfo]
         Returns the most recent model version artifact.
 
-    save_metric_to_tmp_file(metric: MetricInfo) -> None
+    save_metric_to_file(metric: MetricInfo) -> None
         Saves a metric to a temporary file.
 
     save_all_metrics() -> None
@@ -97,14 +99,15 @@ class Prov4MLData:
         self.EXPERIMENT_NAME = "test_experiment"
         self.EXPERIMENT_DIR = "test_experiment_dir"
         self.ARTIFACTS_DIR = "artifact_dir"
+        self.METRICS_DIR = "metrics_dir"
         self.USER_NAMESPACE = "user_namespace"
         self.RUN_ID = 0
+        self.METRICS_FILE_TYPE = "zarr"
 
         self.global_rank = None
         self.is_collecting = False
 
         self.save_metrics_after_n_logs = 100
-        self.TMP_DIR = "tmp"
 
     def init(
             self, 
@@ -113,7 +116,8 @@ class Prov4MLData:
             user_namespace: Optional[str] = None, 
             collect_all_processes: bool = False, 
             save_after_n_logs: int = 100, 
-            rank: Optional[int] = None
+            rank: Optional[int] = None,
+            metrics_file_type: Optional[str] = "zarr"
         ) -> None:
         """
         Initializes the experiment with the given parameters and sets up directories and metadata.
@@ -159,7 +163,8 @@ class Prov4MLData:
         self.EXPERIMENT_DIR = os.path.join(self.PROV_SAVE_PATH, experiment_name + f"_{run_id}")
         self.RUN_ID = run_id
         self.ARTIFACTS_DIR = os.path.join(self.EXPERIMENT_DIR, "artifacts")
-        self.TMP_DIR = os.path.join(self.EXPERIMENT_DIR, "tmp")
+        self.METRICS_DIR = os.path.join(self.EXPERIMENT_DIR, "metrics")
+        self.METRICS_FILE_TYPE = metrics_file_type
 
     def add_metric(
         self, 
@@ -204,7 +209,7 @@ class Prov4MLData:
 
         total_metrics_values = self.metrics[(metric, context)].total_metric_values
         if total_metrics_values % self.save_metrics_after_n_logs == 0:
-            self.save_metric_to_tmp_file(self.metrics[(metric, context)])
+            self.save_metric_to_file(self.metrics[(metric, context)])
 
     def add_cumulative_metric(self, label: str, value: Any, fold_operation: FoldOperation) -> None:
         """
@@ -304,7 +309,7 @@ class Prov4MLData:
             return model_versions[-1]
         return None
 
-    def save_metric_to_tmp_file(self, metric: MetricInfo) -> None:
+    def save_metric_to_file(self, metric: MetricInfo) -> None:
         """
         Saves a metric to a temporary file.
 
@@ -318,10 +323,10 @@ class Prov4MLData:
         """
         if not self.is_collecting: return
 
-        if not os.path.exists(self.TMP_DIR):
-            os.makedirs(self.TMP_DIR, exist_ok=True)
+        if not os.path.exists(self.METRICS_DIR):
+            os.makedirs(self.METRICS_DIR, exist_ok=True)
 
-        metric.save_to_file(self.TMP_DIR, process=self.global_rank)
+        metric.save_to_file(self.METRICS_DIR, file_type=self.METRICS_FILE_TYPE, process=self.global_rank)
 
     def save_all_metrics(self) -> None:
         """
@@ -334,4 +339,4 @@ class Prov4MLData:
         if not self.is_collecting: return
 
         for metric in self.metrics.values():
-            self.save_metric_to_tmp_file(metric)
+            self.save_metric_to_file(metric)

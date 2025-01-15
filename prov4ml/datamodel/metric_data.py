@@ -82,6 +82,7 @@ class MetricInfo:
     def save_to_file(
             self, 
             path : str, 
+            file_type : str,
             process : Optional[int] = None
         ) -> None:
         """
@@ -91,6 +92,8 @@ class MetricInfo:
         -----------
         path : str
             The directory path where the file will be saved.
+        file_type : str
+            The type of file to be saved.
         process : Optional[int], optional
             The process identifier to be included in the filename. If not provided, 
             the filename will not include a process identifier.
@@ -99,26 +102,34 @@ class MetricInfo:
         --------
         None
         """
-        # if process is not None:
-        #     file = os.path.join(path, f"{self.name}_{self.context}_GR{process}.txt")
-        # else:
-        #     file = os.path.join(path, f"{self.name}_{self.context}.txt")
-        # file_exists = os.path.exists(file)
-
-        # with open(file, "a") as f:
-        #     if not file_exists:
-        #         f.write(f"{self.name}, {self.context}, {self.source}\n")
-        #     for epoch, values in self.epochDataList.items():
-        #         for value, timestamp in values:
-        #             f.write(f"{epoch}, {value}, {timestamp}\n")
-
-        # self.epochDataList = {}
-
         if process is not None:
-            zarr_file = os.path.join(path, f"{self.name}_{self.context}_GR{process}.zarr")
+            file = os.path.join(path, f"{self.name}_{self.context}_GR{process}.{file_type}")
         else:
-            zarr_file = os.path.join(path, f"{self.name}_{self.context}.zarr")
+            file = os.path.join(path, f"{self.name}_{self.context}.{file_type}")
 
+        if file_type == "zarr":
+            self.save_to_zarr(file)
+        else:
+            self.save_to_txt(file)
+
+        self.epochDataList = {}
+
+    def save_to_zarr(
+            self,
+            zarr_file : str
+        ) -> None:
+        """
+        Saves the metric information in a zarr file.
+
+        Parameters:
+        -----------
+        zarr_file : str
+            The path to the zarr file where the metric information will be saved.
+
+        Returns:
+        --------
+        None
+        """
         if os.path.exists(zarr_file):
             dataset = zarr.open(zarr_file, mode='a')
         else:
@@ -139,19 +150,36 @@ class MetricInfo:
                 values.append(value)
                 timestamps.append(timestamp)
 
-        epochs = np.array(epochs, dtype='i4')
-        values = np.array(values, dtype='f4')
-        timestamps = np.array(timestamps, dtype='i8')
-
         if 'epochs' in dataset:
             dataset['epochs'].append(epochs)
             dataset['values'].append(values)
             dataset['timestamps'].append(timestamps)
         else:
-            dataset.create_dataset('epochs', data=epochs, chunks=(1000,), dtype=epochs.dtype)
-            dataset.create_dataset('values', data=values, chunks=(1000,), dtype=values.dtype)
-            dataset.create_dataset('timestamps', data=timestamps, chunks=(1000,), dtype=timestamps.dtype)
+            dataset.create_dataset('epochs', data=epochs, chunks=(100,), dtype='i4')
+            dataset.create_dataset('values', data=values, chunks=(100,), dtype='f4')
+            dataset.create_dataset('timestamps', data=timestamps, chunks=(100,), dtype='i8')
 
-        self.epochDataList = {}
+    def save_to_txt(
+            self,
+            txt_file : str
+        ) -> None:
+        """
+        Saves the metric information in a text file.
 
+        Parameters:
+        -----------
+        txt_file : str
+            The path to the text file where the metric information will be saved.
 
+        Returns:
+        --------
+        None
+        """
+        file_exists = os.path.exists(txt_file)
+
+        with open(txt_file, "a") as f:
+            if not file_exists:
+                f.write(f"{self.name}, {self.context}, {self.source}\n")
+            for epoch, values in self.epochDataList.items():
+                for value, timestamp in values:
+                    f.write(f"{epoch}, {value}, {timestamp}\n")
