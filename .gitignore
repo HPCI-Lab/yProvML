@@ -194,3 +194,6 @@ powermetrics_log.txt
 prov/
 data/
 lightning_logs/
+
+# Mac
+.DS_Store
