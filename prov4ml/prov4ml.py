@@ -20,7 +20,8 @@ def start_run_ctx(
         rank : Optional[int] = None, 
         create_graph: Optional[bool] = False, 
         create_svg: Optional[bool] = False, 
-        metrics_file_type: MetricsType = MetricsType.ZARR
+        metrics_file_type: MetricsType = MetricsType.ZARR,
+        use_compression: bool = True
     ): 
     """
     Context manager for starting and ending a run, initializing provenance data collection and optionally creating visualizations.
@@ -75,7 +76,8 @@ def start_run_ctx(
         collect_all_processes=collect_all_processes, 
         save_after_n_logs=save_after_n_logs, 
         rank=rank, 
-        metrics_file_type=metrics_file_type
+        metrics_file_type=metrics_file_type,
+        use_compression=use_compression
     )
    
     energy_utils._carbon_init()
@@ -104,7 +106,8 @@ def start_run(
         collect_all_processes: Optional[bool] = False,
         save_after_n_logs: Optional[int] = 100,
         rank : Optional[int] = None, 
-        metrics_file_type: MetricsType = MetricsType.ZARR
+        metrics_file_type: MetricsType = MetricsType.ZARR,
+        use_compression: bool = True
     ) -> None:
     """
     Initializes the provenance data collection and sets up various utilities for tracking.
@@ -137,7 +140,8 @@ def start_run(
         collect_all_processes=collect_all_processes, 
         save_after_n_logs=save_after_n_logs, 
         rank=rank,
-        metrics_file_type=metrics_file_type
+        metrics_file_type=metrics_file_type,
+        use_compression=use_compression
     )
 
     energy_utils._carbon_init()

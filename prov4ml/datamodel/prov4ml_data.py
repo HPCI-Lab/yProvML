@@ -104,6 +104,7 @@ class Prov4MLData:
         self.USER_NAMESPACE = "user_namespace"
         self.RUN_ID = 0
         self.METRICS_FILE_TYPE: MetricsType = MetricsType.ZARR
+        self.use_compression: bool = True
 
         self.global_rank = None
         self.is_collecting = False
@@ -118,7 +119,8 @@ class Prov4MLData:
             collect_all_processes: bool = False, 
             save_after_n_logs: int = 100, 
             rank: Optional[int] = None,
-            metrics_file_type: MetricsType = MetricsType.ZARR
+            metrics_file_type: MetricsType = MetricsType.ZARR,
+            use_compression: bool = True
         ) -> None:
         """
         Initializes the experiment with the given parameters and sets up directories and metadata.
@@ -168,6 +170,7 @@ class Prov4MLData:
         self.ARTIFACTS_DIR = os.path.join(self.EXPERIMENT_DIR, "artifacts")
         self.METRICS_DIR = os.path.join(self.EXPERIMENT_DIR, "metrics")
         self.METRICS_FILE_TYPE = metrics_file_type
+        self.use_compression = use_compression
 
     def add_metric(
         self, 
@@ -329,7 +332,7 @@ class Prov4MLData:
         if not os.path.exists(self.METRICS_DIR):
             os.makedirs(self.METRICS_DIR, exist_ok=True)
 
-        metric.save_to_file(self.METRICS_DIR, file_type=self.METRICS_FILE_TYPE, process=self.global_rank)
+        metric.save_to_file(self.METRICS_DIR, file_type=self.METRICS_FILE_TYPE, use_compression=self.use_compression, process=self.global_rank)
 
     def save_all_metrics(self) -> None:
         """

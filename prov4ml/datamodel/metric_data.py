@@ -82,9 +82,10 @@ class MetricInfo:
 
     def save_to_file(
             self, 
-            path : str, 
-            file_type : MetricsType,
-            process : Optional[int] = None
+            path: str, 
+            file_type: MetricsType,
+            use_compression: bool, # Spostarlo quando viene creata la metrica
+            process: Optional[int] = None
         ) -> None:
         """
         Saves the metric information to a file.
@@ -109,7 +110,7 @@ class MetricInfo:
             file = os.path.join(path, f"{self.name}_{self.context}.{file_type.value}")
 
         if file_type == MetricsType.ZARR:
-            self.save_to_zarr(file)
+            self.save_to_zarr(file, use_compression)
         elif file_type == MetricsType.TXT:
             self.save_to_txt(file)
         else:
@@ -119,7 +120,8 @@ class MetricInfo:
 
     def save_to_zarr(
             self,
-            zarr_file : str
+            zarr_file: str,
+            use_compression: bool
         ) -> None:
         """
         Saves the metric information in a zarr file.
@@ -158,16 +160,18 @@ class MetricInfo:
             dataset['values'].append(values)
             dataset['timestamps'].append(timestamps)
         else:
-            # dataset.create_dataset('epochs', data=epochs, chunks=(100,), dtype='i4', compressor=None)
-            # dataset.create_dataset('values', data=values, chunks=(100,), dtype='f4', compressor=None)
-            # dataset.create_dataset('timestamps', data=timestamps, chunks=(100,), dtype='i8', compressor=None)
-            dataset.create_dataset('epochs', data=epochs, chunks=(100,), dtype='i4')
-            dataset.create_dataset('values', data=values, chunks=(100,), dtype='f4')
-            dataset.create_dataset('timestamps', data=timestamps, chunks=(100,), dtype='i8')
+            if use_compression:
+                dataset.create_dataset('epochs', data=epochs, chunks=(1000,), dtype='i4')
+                dataset.create_dataset('values', data=values, chunks=(1000,), dtype='f4')
+                dataset.create_dataset('timestamps', data=timestamps, chunks=(1000,), dtype='i8')
+            else:
+                dataset.create_dataset('epochs', data=epochs, chunks=(1000,), dtype='i4', compressor=None)
+                dataset.create_dataset('values', data=values, chunks=(1000,), dtype='f4', compressor=None)
+                dataset.create_dataset('timestamps', data=timestamps, chunks=(1000,), dtype='i8', compressor=None)
 
     def save_to_txt(
             self,
-            txt_file : str
+            txt_file: str
         ) -> None:
         """
         Saves the metric information in a text file.
@@ -189,3 +193,78 @@ class MetricInfo:
             for epoch, values in self.epochDataList.items():
                 for value, timestamp in values:
                     f.write(f"{epoch}, {value}, {timestamp}\n")
+
+    def copy_to_zarr(
+            self,
+            path: str,
+            file_type: MetricsType,
+            use_compression: bool = True,
+            process: Optional[int] = None
+        ) -> None:
+        """
+        Copies the metric to a zarr file.
+
+        Parameters:
+        -----------
+        path : str
+            The directory path where the file will be saved.
+        file_type : MetricsType
+            The type of file to be read.
+        use_compression : bool
+            Whether to use compression when saving the zarr file. Defaults to True.
+        process : Optional[int], optional
+            The process identifier to be included in the filename. If not provided, 
+            the filename will not include a process identifier.
+
+        Returns:
+        --------
+        None
+        """
+        if process is not None:
+            file = os.path.join(path, f"{self.name}_{self.context}_GR{process}.{file_type.value}")
+        else:
+            file = os.path.join(path, f"{self.name}_{self.context}.{file_type.value}")
+
+        output_path = os.path.join(path, f"copy_{self.name}_{self.context}_GR{process}.{file_type.value}")
+        output_file = zarr.open(output_path, mode='w')
+
+        if file_type == MetricsType.ZARR:
+            dataset = zarr.open(file, mode='r')
+
+            for name in dataset.array_keys():
+                if use_compression:
+                    output_file.create_dataset(name, data=dataset[name], chunks=dataset[name].chunks, dtype=dataset[name].dtype, shape=dataset[name].shape)
+                else:
+                    output_file.create_dataset(name, data=dataset[name], chunks=dataset[name].chunks, dtype=dataset[name].dtype, shape=dataset[name].shape, compressor=None)
+
+            for key, value in dataset.attrs.items():
+                output_file.attrs[key] = value
+
+        elif file_type == MetricsType.TXT:
+            with open(file, "r") as f:
+                lines = f.readlines()
+
+            epochs = []
+            values = []
+            timestamps = []
+            for line in lines[1:]:
+                epoch, value, timestamp = line.split(',')
+                epochs.append(int(epoch))
+                values.append(float(value))
+                timestamps.append(int(timestamp))
+
+            epochs = np.array(epochs, dtype='i4')
+            values = np.array(values, dtype='f4')
+            timestamps = np.array(timestamps, dtype='i8')
+
+            if use_compression:
+                output_file.create_dataset('epochs', data=epochs, chunks=(100,), dtype='i4')
+                output_file.create_dataset('values', data=values, chunks=(100,), dtype='f4')
+                output_file.create_dataset('timestamps', data=timestamps, chunks=(100,), dtype='i8')
+            else:
+                output_file.create_dataset('epochs', data=epochs, chunks=(100,), dtype='i4', compressor=None)
+                output_file.create_dataset('values', data=values, chunks=(100,), dtype='f4', compressor=None)
+                output_file.create_dataset('timestamps', data=timestamps, chunks=(100,), dtype='i8', compressor=None)
+
+        else:
+            raise ValueError(f"Unsupported file type: {file_type}")
