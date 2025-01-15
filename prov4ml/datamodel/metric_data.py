@@ -6,6 +6,7 @@ from typing import Optional
 import zarr
 
 from prov4ml.datamodel.attribute_type import LoggingItemKind
+from prov4ml.provenance.metrics_type import MetricsType
 
 class MetricInfo:
     """
@@ -82,7 +83,7 @@ class MetricInfo:
     def save_to_file(
             self, 
             path : str, 
-            file_type : str,
+            file_type : MetricsType,
             process : Optional[int] = None
         ) -> None:
         """
@@ -103,14 +104,16 @@ class MetricInfo:
         None
         """
         if process is not None:
-            file = os.path.join(path, f"{self.name}_{self.context}_GR{process}.{file_type}")
+            file = os.path.join(path, f"{self.name}_{self.context}_GR{process}.{file_type.value}")
         else:
-            file = os.path.join(path, f"{self.name}_{self.context}.{file_type}")
+            file = os.path.join(path, f"{self.name}_{self.context}.{file_type.value}")
 
-        if file_type == "zarr":
+        if file_type == MetricsType.ZARR:
             self.save_to_zarr(file)
-        else:
+        elif file_type == MetricsType.TXT:
             self.save_to_txt(file)
+        else:
+            raise ValueError(f"Unsupported file type: {file_type}")
 
         self.epochDataList = {}
 
@@ -155,6 +158,9 @@ class MetricInfo:
             dataset['values'].append(values)
             dataset['timestamps'].append(timestamps)
         else:
+            # dataset.create_dataset('epochs', data=epochs, chunks=(100,), dtype='i4', compressor=None)
+            # dataset.create_dataset('values', data=values, chunks=(100,), dtype='f4', compressor=None)
+            # dataset.create_dataset('timestamps', data=timestamps, chunks=(100,), dtype='i8', compressor=None)
             dataset.create_dataset('epochs', data=epochs, chunks=(100,), dtype='i4')
             dataset.create_dataset('values', data=values, chunks=(100,), dtype='f4')
             dataset.create_dataset('timestamps', data=timestamps, chunks=(100,), dtype='i8')

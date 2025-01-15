@@ -8,6 +8,7 @@ from prov4ml.datamodel.parameter_data import ParameterInfo
 from prov4ml.datamodel.cumulative_metrics import CumulativeMetric, FoldOperation
 from prov4ml.datamodel.metric_data import MetricInfo
 from prov4ml.provenance.context import Context
+from prov4ml.provenance.metrics_type import MetricsType
 from prov4ml.utils import funcs
 
 class Prov4MLData:
@@ -42,7 +43,7 @@ class Prov4MLData:
         The user namespace for organizing experiments.
     RUN_ID : int
         The identifier for the current run of the experiment.
-    METRICS_FILE_TYPE : str
+    METRICS_FILE_TYPE : MetricsType
         The file type used to store metrics.
     global_rank : optional
         The global rank of the current process in a distributed setting.
@@ -102,7 +103,7 @@ class Prov4MLData:
         self.METRICS_DIR = "metrics_dir"
         self.USER_NAMESPACE = "user_namespace"
         self.RUN_ID = 0
-        self.METRICS_FILE_TYPE = "zarr"
+        self.METRICS_FILE_TYPE: MetricsType = MetricsType.ZARR
 
         self.global_rank = None
         self.is_collecting = False
@@ -117,7 +118,7 @@ class Prov4MLData:
             collect_all_processes: bool = False, 
             save_after_n_logs: int = 100, 
             rank: Optional[int] = None,
-            metrics_file_type: Optional[str] = "zarr"
+            metrics_file_type: MetricsType = MetricsType.ZARR
         ) -> None:
         """
         Initializes the experiment with the given parameters and sets up directories and metadata.
@@ -136,6 +137,8 @@ class Prov4MLData:
             The number of logs after which metrics are saved. Default is 100.
         rank : Optional[int], optional
             The rank of the current process in a distributed setting. If not provided, determines the global rank.
+        metrics_file_type : MetricsType
+            The file type used to store metrics. Default is MetricsType.ZARR.
 
         Returns:
         --------

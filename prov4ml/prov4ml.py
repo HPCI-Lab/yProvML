@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from prov4ml.constants import PROV4ML_DATA
 from prov4ml.utils import energy_utils
 from prov4ml.utils import flops_utils
+from prov4ml.provenance.metrics_type import MetricsType
 from prov4ml.logging_aux import log_execution_start_time, log_execution_end_time
 from prov4ml.provenance.provenance_graph import create_prov_document
 from prov4ml.utils.file_utils import save_prov_file
@@ -19,7 +20,7 @@ def start_run_ctx(
         rank : Optional[int] = None, 
         create_graph: Optional[bool] = False, 
         create_svg: Optional[bool] = False, 
-        metrics_file_type: Optional[str] = "zarr"
+        metrics_file_type: MetricsType = MetricsType.ZARR
     ): 
     """
     Context manager for starting and ending a run, initializing provenance data collection and optionally creating visualizations.
@@ -45,8 +46,8 @@ def start_run_ctx(
         Must be True only if `create_graph` is also True.
     create_provenance_collection : Optional[bool], optional
         Whether to create a collection of provenance data from all runs. Default is False.
-    metrics_file_type : Optional[str], optional
-        The type of file to save metrics. Defaults to "zarr".
+    metrics_file_type : MetricsType
+        The type of file to save metrics. Defaults to MetricsType.ZARR.
 
     Raises:
     -------
@@ -103,7 +104,7 @@ def start_run(
         collect_all_processes: Optional[bool] = False,
         save_after_n_logs: Optional[int] = 100,
         rank : Optional[int] = None, 
-        metrics_file_type: Optional[str] = "zarr"
+        metrics_file_type: MetricsType = MetricsType.ZARR
     ) -> None:
     """
     Initializes the provenance data collection and sets up various utilities for tracking.
@@ -122,8 +123,8 @@ def start_run(
         The number of logs after which to save metrics. Default is 100.
     rank : Optional[int], optional
         The rank of the current process in a distributed setting. If not provided, defaults to None.
-    metrics_file_type : Optional[str], optional
-        The type of file to save metrics. Defaults to "zarr".
+    metrics_file_type : MetricsType
+        The type of file to save metrics. Defaults to MetricsType.ZARR.
 
     Returns:
     --------
