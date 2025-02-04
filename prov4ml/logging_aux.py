@@ -3,6 +3,7 @@ import torch
 import json
 import warnings
 import subprocess
+from pathlib import Path
 
 from torch.utils.data import DataLoader, Subset, Dataset
 from typing import Any, Optional, Union
@@ -12,11 +13,6 @@ from prov4ml.utils import energy_utils, flops_utils, system_utils, time_utils, f
 from prov4ml.provenance.context import Context
 from prov4ml.datamodel.cumulative_metrics import FoldOperation
 from prov4ml.constants import PROV4ML_DATA
-
-### Globals
-COUNT_INPUTS = 0
-COUNT_OUTPUTS = 0
-###########
     
 def log_metric(
         key: str, 
@@ -109,7 +105,7 @@ def log_model_memory_footprint(model: Union[torch.nn.Module, Any], model_name: s
     log_param("memory_of_model", memory_per_model)
     log_param("total_memory_load_of_model", memory_per_model + memory_per_grad + memory_per_optim)
 
-
+# TODO: refactor, this is terrible
 def safe_get_attr(dic, node, attr, attr_label=None):
     if attr_label is None: 
         attr_label = str(attr) 
@@ -124,7 +120,6 @@ def safe_get_attr(dic, node, attr, attr_label=None):
     except AttributeError: 
         pass
         # print(dic, node, attr, attr_label)
-
 
 def nested_model(m: torch.nn.Module):
     children = dict(m.named_children())
@@ -160,14 +155,14 @@ def log_model_layers_description(model: Union[torch.nn.Module, Any], model_name 
     with open(f"{path}/{model_name}_layers_description.json", "w") as fp:
         json.dump(mo , fp) 
 
-    log_artifact(f"{path}/{model_name}_layers_description.json", Context.EVALUATION)
+    log_artifact(model_name, f"{path}/{model_name}_layers_description.json", Context.EVALUATION, log_copy_in_prov_directory=False)
 
 def log_model(
         model: Union[torch.nn.Module, Any], 
         model_name: str = "default", 
         log_model_info: bool = True, 
         log_model_layers : bool = False,
-        log_as_artifact : bool =True, 
+        log_as_artifact : bool = True, 
     ) -> None:
     """Logs the provided model as artifact and logs memory footprint of the model. 
     
@@ -264,9 +259,11 @@ def log_carbon_metrics(
 
 def log_artifact(
         artifact_path : str, 
+        value : Any, 
         context: Context,
         step: Optional[int] = None, 
-        timestamp: Optional[int] = None
+        timestamp: Optional[int] = None, 
+        log_copy_in_prov_directory : bool = True
     ) -> None:
     """
     Logs the specified artifact to the given context.
@@ -281,14 +278,14 @@ def log_artifact(
         None
     """
     timestamp = timestamp or funcs.get_current_time_millis()
-    PROV4ML_DATA.add_artifact(artifact_path, step=step, context=context, timestamp=timestamp)
+    PROV4ML_DATA.add_artifact(artifact_path, value=value, step=step, context=context, timestamp=timestamp, log_copy_in_prov_directory=log_copy_in_prov_directory)
 
 def save_model_version(
         model: Union[torch.nn.Module, Any], 
         model_name: str, 
         context: Context, 
         step: Optional[int] = None, 
-        timestamp: Optional[int] = None
+        timestamp: Optional[int] = None, 
     ) -> None:
     """
     Saves the state dictionary of the provided model and logs it as an artifact.
@@ -312,7 +309,7 @@ def save_model_version(
     num_files = len([file for file in os.listdir(path) if str(file).startswith(model_name)])
 
     torch.save(model.state_dict(), f"{path}/{model_name}_{num_files}.pth")
-    log_artifact(f"{path}/{model_name}_{num_files}.pth", context=context, step=step, timestamp=timestamp)
+    log_artifact(model_name, f"{path}/{model_name}_{num_files}.pth", context=context, step=step, timestamp=timestamp, log_copy_in_prov_directory=False)
 
 def log_dataset(dataset : Union[DataLoader, Subset, Dataset], label : str): 
     """
@@ -372,17 +369,26 @@ def get_git_remote_url():
         print("Not found")
         return None  # No remote found
 
-def log_source_code():
-    repo = get_git_remote_url()
-    if repo is not None: 
-        log_param(f"prov-ml:source_code", repo)
+def log_source_code(path: str = None):
+    if path is None: 
+        repo = get_git_remote_url()
+        if repo is not None: 
+            log_param(f"prov-ml:source_code", repo)
+            # TODO: also the git commit
+    else: 
+        try: 
+            p = Path(path)
+            if p.is_file(): 
+                log_artifact(p.name, p, context=Context.EVALUATION, log_copy_in_prov_directory=True)
+                log_param(f"prov-ml:source_code", PROV4ML_DATA.ARTIFACTS_DIR + p.name)
+            else: 
+                PROV4ML_DATA.add_artifact_directory("source_code", p, log_copy_in_prov_directory=True)
+                log_param(f"prov-ml:source_code", PROV4ML_DATA.ARTIFACTS_DIR + "/source_code")
+        except: 
+            print(f"Path: {path} is invalid")
 
-def log_input(inp): 
-    global COUNT_INPUTS
-    log_param(f"prov-ml:input_{COUNT_INPUTS}", inp)
-    COUNT_INPUTS += 1
+def log_input(inp, log_copy_in_prov_directory=True): 
+    PROV4ML_DATA.add_input(inp, log_copy_in_prov_directory=log_copy_in_prov_directory)
 
-def log_output(out): 
-    global COUNT_OUTPUTS
-    log_param(f"prov-ml:output_{COUNT_OUTPUTS}", out)
-    COUNT_OUTPUTS += 1
+def log_output(out, log_copy_in_prov_directory=True): 
+    PROV4ML_DATA.add_output(out, log_copy_in_prov_directory=log_copy_in_prov_directory)

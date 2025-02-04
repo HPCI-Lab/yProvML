@@ -1,6 +1,8 @@
 
 import os
-from typing import Any, Dict, List, Optional
+import shutil
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 from prov4ml.datamodel.artifact_data import ArtifactInfo
 from prov4ml.datamodel.attribute_type import LoggingItemKind
@@ -99,6 +101,9 @@ class Prov4MLData:
         self.ARTIFACTS_DIR = "artifact_dir"
         self.USER_NAMESPACE = "user_namespace"
         self.RUN_ID = 0
+
+        self.inputs_count = 0
+        self.outputs_count = 0
 
         self.global_rank = None
         self.is_collecting = False
@@ -247,13 +252,32 @@ class Prov4MLData:
 
         self.parameters[parameter] = ParameterInfo(parameter, value)
 
+    def add_input(self, inp : Any, log_copy_in_prov_directory : bool = True): 
+        try: 
+            self.add_artifact(f"prov-ml:input_{self.inputs_count}", Path(inp), log_copy_in_prov_directory=log_copy_in_prov_directory) 
+        except: 
+            pass
+
+        self.add_parameter(f"prov-ml:input_{self.inputs_count}", inp)
+        self.inputs_count += 1
+
+    def add_output(self, out : Any, log_copy_in_prov_directory : bool = True): 
+        try: 
+            self.add_artifact(f"prov-ml:output_{self.outputs_count}", Path(out), log_copy_in_prov_directory=log_copy_in_prov_directory)
+        except: 
+            pass
+
+        self.add_parameter(f"prov-ml:output_{self.outputs_count}", out)
+        self.outputs_count += 1
+
     def add_artifact(
         self, 
         artifact_name: str, 
         value: Any = None, 
         step: Optional[int] = None, 
         context: Optional[Any] = None, 
-        timestamp: Optional[int] = None
+        timestamp: Optional[int] = None, 
+        log_copy_in_prov_directory : bool = True
     ) -> None:
         """
         Adds an artifact to the artifacts dictionary.
@@ -267,7 +291,38 @@ class Prov4MLData:
         """
         if not self.is_collecting: return
 
+        if log_copy_in_prov_directory: 
+            try: 
+                path = Path(value)
+                newart_path = self.ARTIFACTS_DIR + "/" + path.name
+                shutil.copy(path, newart_path)
+                value = newart_path
+            except: 
+                print(f">add_artifact: log_copy_in_prov_directory was True but value is not a valid Path: {value}")
+
         self.artifacts[(artifact_name, context)] = ArtifactInfo(artifact_name, value, step, context=context, timestamp=timestamp)
+ 
+    def add_artifact_directory(
+            self,
+            dir_name : str, 
+            dir_path : str, 
+            log_copy_in_prov_directory : bool=True, 
+            step: Optional[int] = None, 
+            context: Optional[Any] = None, 
+            timestamp: Optional[int] = None, 
+    ) -> None: 
+        if not self.is_collecting: return
+
+        if log_copy_in_prov_directory: 
+            try: 
+                path = Path(dir_path)
+                newart_path = self.ARTIFACTS_DIR + "/" + dir_name
+                shutil.copytree(path, newart_path)
+                dir_path = newart_path
+            except: 
+                print(f">add_artifact_directory: log_copy_in_prov_directory was True but value is not a valid Path: {dir_path}")
+
+        self.artifacts[(dir_name, context)] = ArtifactInfo(dir_name, dir_path, step=step, context=context, timestamp=timestamp)
 
     def get_artifacts(self) -> List[ArtifactInfo]:
         """
