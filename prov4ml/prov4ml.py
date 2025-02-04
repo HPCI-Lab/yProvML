@@ -17,6 +17,7 @@ def start_run_ctx(
         collect_all_processes: Optional[bool] = False,
         save_after_n_logs: Optional[int] = 100,
         rank : Optional[int] = None, 
+        disable_codecarbon : Optional[bool] = False,
         create_graph: Optional[bool] = False, 
         create_svg: Optional[bool] = False, 
     ): 
@@ -73,7 +74,8 @@ def start_run_ctx(
         rank=rank, 
     )
    
-    energy_utils._carbon_init()
+    if not disable_codecarbon: 
+        energy_utils._carbon_init()
     flops_utils._init_flops_counters()
 
     log_execution_start_time()
@@ -99,6 +101,7 @@ def start_run(
         collect_all_processes: Optional[bool] = False,
         save_after_n_logs: Optional[int] = 100,
         rank : Optional[int] = None, 
+        disable_codecarbon : Optional[bool] = False,
     ) -> None:
     """
     Initializes the provenance data collection and sets up various utilities for tracking.
@@ -131,7 +134,8 @@ def start_run(
         rank=rank
     )
 
-    energy_utils._carbon_init()
+    if not disable_codecarbon: 
+        energy_utils._carbon_init()
     flops_utils._init_flops_counters()
 
     log_execution_start_time()

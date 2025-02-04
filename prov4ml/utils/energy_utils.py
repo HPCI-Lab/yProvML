@@ -1,7 +1,6 @@
 
-import pandas as pd 
-from codecarbon import EmissionsTracker
 from typing import Any, Callable, Tuple
+from codecarbon import EmissionsTracker
 
 def carbon_tracked_function(f: Callable, *args, **kwargs) -> Tuple[Any, Any]:
     """

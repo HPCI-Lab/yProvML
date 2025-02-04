@@ -34,8 +34,6 @@ class MNISTModel(nn.Module):
         super().__init__()
         self.model = torch.nn.Sequential(
             torch.nn.Linear(28 * 28, 10), 
-            torch.nn.Conv2d(2, 5, 2, 1), 
-            torch.nn.MaxPool2d(2, 1), 
             torch.nn.ReLU(),
         )
 

@@ -2,6 +2,7 @@ import os
 import torch
 import json
 import warnings
+import subprocess
 
 from torch.utils.data import DataLoader, Subset, Dataset
 from typing import Any, Optional, Union
@@ -11,6 +12,11 @@ from prov4ml.utils import energy_utils, flops_utils, system_utils, time_utils, f
 from prov4ml.provenance.context import Context
 from prov4ml.datamodel.cumulative_metrics import FoldOperation
 from prov4ml.constants import PROV4ML_DATA
+
+### Globals
+COUNT_INPUTS = 0
+COUNT_OUTPUTS = 0
+###########
     
 def log_metric(
         key: str, 
@@ -354,3 +360,29 @@ def register_final_metric(
         None
     """
     PROV4ML_DATA.add_cumulative_metric(metric_name, initial_value, fold_operation)
+
+def log_execution_command(cmd : str): 
+    log_param("prov-ml:execution_command", cmd)
+
+def get_git_remote_url():
+    try:
+        remote_url = subprocess.check_output(['git', 'config', '--get', 'remote.origin.url'], stderr=subprocess.DEVNULL).strip().decode()
+        return remote_url
+    except subprocess.CalledProcessError:
+        print("Not found")
+        return None  # No remote found
+
+def log_source_code():
+    repo = get_git_remote_url()
+    if repo is not None: 
+        log_param(f"prov-ml:source_code", repo)
+
+def log_input(inp): 
+    global COUNT_INPUTS
+    log_param(f"prov-ml:input_{COUNT_INPUTS}", inp)
+    COUNT_INPUTS += 1
+
+def log_output(out): 
+    global COUNT_OUTPUTS
+    log_param(f"prov-ml:output_{COUNT_OUTPUTS}", out)
+    COUNT_OUTPUTS += 1
