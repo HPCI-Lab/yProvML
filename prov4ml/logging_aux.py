@@ -170,6 +170,7 @@ def log_model(
         model (Union[torch.nn.Module, Any]): The model to be logged.
         model_name (str, optional): Name of the model. Defaults to "default".
         log_model_info (bool, optional): Whether to log model memory footprint. Defaults to True.
+        log_model_layers (bool, optional): Whether to log model layers details. Defaults to False.
         log_as_artifact (bool, optional): Whether to log the model as an artifact. Defaults to True.
     """
     if log_model_info:
@@ -358,10 +359,22 @@ def register_final_metric(
     """
     PROV4ML_DATA.add_cumulative_metric(metric_name, initial_value, fold_operation)
 
-def log_execution_command(cmd : str): 
+def log_execution_command(cmd: str) -> None:
+    """
+    Logs the execution command.
+    
+    Args:
+        cmd (str): The command to be logged.
+    """
     log_param("prov-ml:execution_command", cmd)
 
-def get_git_remote_url():
+def get_git_remote_url() -> Optional[str]:
+    """
+    Retrieves the Git remote URL of the repository.
+
+    Returns:
+        The remote URL as a string if found, otherwise None.
+    """
     try:
         remote_url = subprocess.check_output(['git', 'config', '--get', 'remote.origin.url'], stderr=subprocess.DEVNULL).strip().decode()
         return remote_url
@@ -369,26 +382,46 @@ def get_git_remote_url():
         print("Not found")
         return None  # No remote found
 
-def log_source_code(path: str = None):
-    if path is None: 
+def log_source_code(path: Optional[str] = None) -> None:
+    """
+    Logs the source code location, either from a Git repository or a specified path.
+    
+    Args: 
+        path (Optional[str]): The path to the source code. If None, attempts to retrieve from Git.
+    """
+    if path is None:
         repo = get_git_remote_url()
-        if repo is not None: 
-            log_param(f"prov-ml:source_code", repo)
-            # TODO: also the git commit
-    else: 
-        try: 
+        if repo is not None:
+            log_param("prov-ml:source_code", repo)
+            # TODO: also log the git commit
+    else:
+        try:
             p = Path(path)
-            if p.is_file(): 
+            if p.is_file():
                 log_artifact(p.name, p, context=Context.EVALUATION, log_copy_in_prov_directory=True)
-                log_param(f"prov-ml:source_code", PROV4ML_DATA.ARTIFACTS_DIR + p.name)
-            else: 
+                log_param("prov-ml:source_code", PROV4ML_DATA.ARTIFACTS_DIR + p.name)
+            else:
                 PROV4ML_DATA.add_artifact_directory("source_code", p, log_copy_in_prov_directory=True)
-                log_param(f"prov-ml:source_code", PROV4ML_DATA.ARTIFACTS_DIR + "/source_code")
-        except: 
+                log_param("prov-ml:source_code", PROV4ML_DATA.ARTIFACTS_DIR + "/source_code")
+        except Exception:
             print(f"Path: {path} is invalid")
 
-def log_input(inp, log_copy_in_prov_directory=True): 
+def log_input(inp: str, log_copy_in_prov_directory: bool = True) -> None:
+    """
+    Logs the input data.
+    
+    Args: 
+        inp (str): The input data to be logged.
+        log_copy_in_prov_directory (bool): Whether to copy the input into the provenance directory.
+    """
     PROV4ML_DATA.add_input(inp, log_copy_in_prov_directory=log_copy_in_prov_directory)
 
-def log_output(out, log_copy_in_prov_directory=True): 
+def log_output(out: str, log_copy_in_prov_directory: bool = True) -> None:
+    """
+    Logs the output data.
+    
+    Args: 
+        out (str): The output data to be logged.
+        log_copy_in_prov_directory (bool): Whether to copy the output into the provenance directory.
+    """
     PROV4ML_DATA.add_output(out, log_copy_in_prov_directory=log_copy_in_prov_directory)

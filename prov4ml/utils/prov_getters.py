@@ -1,6 +1,10 @@
 
-import pandas as pd
+# KEEP THESE FOR NAN eval() #
 import numpy as np
+from torch import nan
+#############################
+
+import pandas as pd
 from prov4ml.utils.time_utils import timestamp_to_seconds
 from typing import Optional
 
@@ -14,7 +18,7 @@ def get_metrics(data, keyword=None):
 def get_metric(data, metric, time_in_sec=False, time_incremental=False, sort_by=None, start_at=None, end_at=None):
 
     if metric not in data["entity"].keys(): 
-        raise AttributeError
+        raise AttributeError(f">get_metric({metric}) not found in prov file")
 
     epochs = eval(data["entity"][metric]["prov-ml:metric_epoch_list"])
     values = eval(data["entity"][metric]["prov-ml:metric_value_list"])
@@ -39,7 +43,6 @@ def get_metric(data, metric, time_in_sec=False, time_incremental=False, sort_by=
         df = df.sort_values(by=sort_by)
     
     return df
-
 
 def get_avg_metric(data, metric):
     values = eval(data["entity"][metric]["prov-ml:metric_value_list"])

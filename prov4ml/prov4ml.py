@@ -12,7 +12,7 @@ from prov4ml.utils.file_utils import save_prov_file
 @contextmanager
 def start_run_ctx(
         prov_user_namespace: str,
-        experiment_name: Optional[str] = None,
+        experiment_name: str,
         provenance_save_dir: Optional[str] = None,
         collect_all_processes: Optional[bool] = False,
         save_after_n_logs: Optional[int] = 100,
@@ -96,7 +96,7 @@ def start_run_ctx(
 
 def start_run(
         prov_user_namespace: str,
-        experiment_name: Optional[str] = None,
+        experiment_name: str,
         provenance_save_dir: Optional[str] = None,
         collect_all_processes: Optional[bool] = False,
         save_after_n_logs: Optional[int] = 100,

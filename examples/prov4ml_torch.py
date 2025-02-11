@@ -16,7 +16,6 @@ BATCH_SIZE = 4
 EPOCHS = 2
 DEVICE = "mps"
 
-# start the run in the same way as with mlflow
 prov4ml.start_run(
     prov_user_namespace="www.example.org",
     experiment_name="experiment_name", 
