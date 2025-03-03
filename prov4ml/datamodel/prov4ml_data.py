@@ -277,7 +277,8 @@ class Prov4MLData:
         step: Optional[int] = None, 
         context: Optional[Any] = None, 
         timestamp: Optional[int] = None, 
-        log_copy_in_prov_directory : bool = True
+        log_copy_in_prov_directory : bool = True, 
+        is_model = False, 
     ) -> None:
         """
         Adds an artifact to the artifacts dictionary.
@@ -300,7 +301,7 @@ class Prov4MLData:
             except: 
                 print(f">add_artifact: log_copy_in_prov_directory was True but value is not a valid Path: {value}")
 
-        self.artifacts[(artifact_name, context)] = ArtifactInfo(artifact_name, value, step, context=context, timestamp=timestamp)
+        self.artifacts[(artifact_name, context)] = ArtifactInfo(artifact_name, value, step, context=context, timestamp=timestamp, is_model=is_model)
  
     def add_artifact_directory(
             self,
@@ -310,6 +311,7 @@ class Prov4MLData:
             step: Optional[int] = None, 
             context: Optional[Any] = None, 
             timestamp: Optional[int] = None, 
+            is_model : bool = False
     ) -> None: 
         if not self.is_collecting: return
 
@@ -322,7 +324,7 @@ class Prov4MLData:
             except: 
                 print(f">add_artifact_directory: log_copy_in_prov_directory was True but value is not a valid Path: {dir_path}")
 
-        self.artifacts[(dir_name, context)] = ArtifactInfo(dir_name, dir_path, step=step, context=context, timestamp=timestamp)
+        self.artifacts[(dir_name, context)] = ArtifactInfo(dir_name, dir_path, step=step, context=context, timestamp=timestamp, is_model=is_model)
 
     def get_artifacts(self) -> List[ArtifactInfo]:
         """

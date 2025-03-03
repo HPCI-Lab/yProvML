@@ -23,7 +23,8 @@ class ArtifactInfo:
         value: Any = None, 
         step: Optional[int] = None, 
         context: Optional[Any] = None, 
-        timestamp: Optional[int] = None
+        timestamp: Optional[int] = None, 
+        is_model : bool = False, 
     ) -> None:
         self.path = name
         self.value = value
@@ -32,7 +33,7 @@ class ArtifactInfo:
         self.creation_timestamp = timestamp
         self.last_modified_timestamp = timestamp
 
-        self.is_model_version = artifact_is_pytorch_model(name)
+        self.is_model_version = is_model
 
     def update(
         self, 
@@ -54,21 +55,21 @@ class ArtifactInfo:
         self.last_modified_timestamp = get_current_time_millis()
 
 
-def artifact_is_pytorch_model(artifact: Any) -> bool:
-    """
-    Checks if the given artifact is a PyTorch model file.
+# def artifact_is_pytorch_model(artifact: Any) -> bool:
+#     """
+#     Checks if the given artifact is a PyTorch model file.
 
-    Parameters:
-        artifact (Any): The artifact to check. Should have a 'path' attribute.
+#     Parameters:
+#         artifact (Any): The artifact to check. Should have a 'path' attribute.
 
-    Returns:
-        bool: True if the artifact is a PyTorch model file, False otherwise.
-    """
+#     Returns:
+#         bool: True if the artifact is a PyTorch model file, False otherwise.
+#     """
 
-    if type(artifact) is str: 
-        return artifact.endswith(".pt") or artifact.endswith(".pth") or artifact.endswith(".torch")
-    elif type(artifact) is ArtifactInfo:
-        return artifact.path.endswith(".pt") or artifact.path.endswith(".pth") or artifact.path.endswith(".torch")
+#     if type(artifact) is str: 
+#         return artifact.endswith(".pt") or artifact.endswith(".pth") or artifact.endswith(".torch")
+#     elif type(artifact) is ArtifactInfo:
+#         return artifact.path.endswith(".pt") or artifact.path.endswith(".pth") or artifact.path.endswith(".torch")
         
-    warnings.warn("Artifact is not a string or ArtifactInfo object. Cannot determine if it is a PyTorch model.")
-    return False
+#     warnings.warn("Artifact is not a string or ArtifactInfo object. Cannot determine if it is a PyTorch model.")
+#     return False

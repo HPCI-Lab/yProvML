@@ -155,7 +155,7 @@ def log_model_layers_description(model: Union[torch.nn.Module, Any], model_name 
     with open(f"{path}/{model_name}_layers_description.json", "w") as fp:
         json.dump(mo , fp) 
 
-    log_artifact(model_name, f"{path}/{model_name}_layers_description.json", Context.EVALUATION, log_copy_in_prov_directory=False)
+    log_artifact(model_name, f"{path}/{model_name}_layers_description.json", Context.EVALUATION, log_copy_in_prov_directory=False, is_model=False)
 
 def log_model(
         model: Union[torch.nn.Module, Any], 
@@ -180,7 +180,7 @@ def log_model(
         log_model_layers_description(model, model_name)
 
     if log_as_artifact:
-        save_model_version(model, model_name, Context.EVALUATION)
+        save_model_version(model, model_name, Context.EVALUATION, incremental=False)
         
 def log_flops_per_epoch(label: str, model: Any, dataset: Any, context: Context, step: Optional[int] = None) -> None:
     """Logs the number of FLOPs (floating point operations) per epoch for the given model and dataset.
@@ -264,7 +264,8 @@ def log_artifact(
         context: Context,
         step: Optional[int] = None, 
         timestamp: Optional[int] = None, 
-        log_copy_in_prov_directory : bool = True
+        log_copy_in_prov_directory : bool = True, 
+        is_model=False
     ) -> None:
     """
     Logs the specified artifact to the given context.
@@ -279,7 +280,7 @@ def log_artifact(
         None
     """
     timestamp = timestamp or funcs.get_current_time_millis()
-    PROV4ML_DATA.add_artifact(artifact_path, value=value, step=step, context=context, timestamp=timestamp, log_copy_in_prov_directory=log_copy_in_prov_directory)
+    PROV4ML_DATA.add_artifact(artifact_path, value=value, step=step, context=context, timestamp=timestamp, log_copy_in_prov_directory=log_copy_in_prov_directory, is_model=is_model)
 
 def save_model_version(
         model: Union[torch.nn.Module, Any], 
@@ -287,6 +288,7 @@ def save_model_version(
         context: Context, 
         step: Optional[int] = None, 
         timestamp: Optional[int] = None, 
+        incremental=True, 
     ) -> None:
     """
     Saves the state dictionary of the provided model and logs it as an artifact.
@@ -307,10 +309,13 @@ def save_model_version(
         os.makedirs(path, exist_ok=True)
 
     # count all models with the same name stored at "path"
-    num_files = len([file for file in os.listdir(path) if str(file).startswith(model_name)])
-
-    torch.save(model.state_dict(), f"{path}/{model_name}_{num_files}.pth")
-    log_artifact(model_name, f"{path}/{model_name}_{num_files}.pth", context=context, step=step, timestamp=timestamp, log_copy_in_prov_directory=False)
+    if incremental: 
+        num_files = len([file for file in os.listdir(path) if str(file).startswith(model_name)])
+        torch.save(model.state_dict(), f"{path}/{model_name}_{num_files}.pth")
+        log_artifact(f"{path}/{model_name}_{num_files}.pth", model_name, context=context, step=step, timestamp=timestamp, log_copy_in_prov_directory=False, is_model=True)
+    else: 
+        torch.save(model.state_dict(), f"{path}/{model_name}.pth")
+        log_artifact(f"{path}/{model_name}.pth", model_name, context=context, step=step, timestamp=timestamp, log_copy_in_prov_directory=False, is_model=True)
 
 def log_dataset(dataset : Union[DataLoader, Subset, Dataset], label : str): 
     """
@@ -398,7 +403,7 @@ def log_source_code(path: Optional[str] = None) -> None:
         try:
             p = Path(path)
             if p.is_file():
-                log_artifact(p.name, p, context=Context.EVALUATION, log_copy_in_prov_directory=True)
+                log_artifact(p.name, p, context=Context.EVALUATION, log_copy_in_prov_directory=True, is_model=False)
                 log_param("prov-ml:source_code", PROV4ML_DATA.ARTIFACTS_DIR + p.name)
             else:
                 PROV4ML_DATA.add_artifact_directory("source_code", p, log_copy_in_prov_directory=True)

@@ -11,7 +11,6 @@ import pandas as pd
 
 from prov4ml.constants import PROV4ML_DATA
 from prov4ml.datamodel.attribute_type import Prov4MLAttribute
-from prov4ml.datamodel.artifact_data import artifact_is_pytorch_model
 from prov4ml.provenance.context import Context
 from prov4ml.utils.funcs import get_global_rank, get_runtime_type
 
@@ -375,7 +374,7 @@ def create_prov_document() -> prov.ProvDocument:
         })
         #the FileInfo object stores only size and path of the artifact, specific connectors 
         # to the artifact store are needed to get other metadata
-        if artifact_is_pytorch_model(artifact):
+        if artifact in PROV4ML_DATA.get_model_versions():
             doc.wasGeneratedBy(f"{artifact.path}", model_ser)
         else: 
             doc.wasGeneratedBy(ent,run_activity,identifier=f'{artifact.path}_gen')    
