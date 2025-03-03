@@ -168,6 +168,6 @@ class ProvMLItwinAILogger(Logger):
         elif kind == 'torch':
             from torch.utils.data import DataLoader
             if isinstance(item, DataLoader):
-                log_dataset(dataset=item, label=identifier)
+                log_dataset(dataset=item, dataset_label=identifier)
             else:
                 log_param(key=identifier, value=item)

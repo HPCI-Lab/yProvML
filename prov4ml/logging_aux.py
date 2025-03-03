@@ -5,19 +5,19 @@ import warnings
 import subprocess
 from pathlib import Path
 
-from torch.utils.data import DataLoader, Subset, Dataset
+from torch.utils.data import DataLoader, Subset, Dataset, RandomSampler
 from typing import Any, Optional, Union
 
 from prov4ml.datamodel.attribute_type import LoggingItemKind
 from prov4ml.utils import energy_utils, flops_utils, system_utils, time_utils, funcs
-from prov4ml.provenance.context import Context
+from prov4ml.datamodel.context import Contexts
 from prov4ml.datamodel.cumulative_metrics import FoldOperation
 from prov4ml.constants import PROV4ML_DATA
     
 def log_metric(
         key: str, 
         value: float, 
-        context:Context, 
+        context:Contexts, 
         step: Optional[int] = 0, 
         source: LoggingItemKind = None, 
     ) -> None:
@@ -44,7 +44,7 @@ def log_execution_end_time() -> None:
     """Logs the end time of the current execution."""
     return log_param("execution_end_time", time_utils.get_time())
 
-def log_current_execution_time(label: str, context: Context, step: Optional[int] = None) -> None:
+def log_current_execution_time(label: str, context: Contexts, step: Optional[int] = None) -> None:
     """Logs the current execution time under the given label.
     
     Args:
@@ -57,7 +57,7 @@ def log_current_execution_time(label: str, context: Context, step: Optional[int]
     """
     return log_metric(label, time_utils.get_time(), context, step=step, source=LoggingItemKind.EXECUTION_TIME)
 
-def log_param(key: str, value: Any) -> None:
+def log_param(key: str, value: Any, context : Contexts = None) -> None:
     """Logs a single parameter key-value pair. 
     
     Args:
@@ -67,9 +67,9 @@ def log_param(key: str, value: Any) -> None:
     Returns:
         None
     """
-    PROV4ML_DATA.add_parameter(key,value)
+    PROV4ML_DATA.add_parameter(key,value, context)
 
-def log_model_memory_footprint(model: Union[torch.nn.Module, Any], model_name: str = "default") -> None:
+def _log_model_memory_footprint(model_name: str, model: Union[torch.nn.Module, Any], context : Optional[Contexts] = None) -> None:
     """Logs the memory footprint of the provided model.
     
     Args:
@@ -79,7 +79,7 @@ def log_model_memory_footprint(model: Union[torch.nn.Module, Any], model_name: s
     Returns:
         None
     """
-    log_param("model_name", model_name)
+    log_param("model_name", model_name, context=context)
 
     total_params = sum(p.numel() for p in model.parameters())
     try: 
@@ -101,53 +101,34 @@ def log_model_memory_footprint(model: Union[torch.nn.Module, Any], model_name: s
     memory_per_grad = total_params * 4 * 1e-6
     memory_per_optim = total_params * 4 * 1e-6
     
-    log_param("total_params", total_params)
-    log_param("memory_of_model", memory_per_model)
-    log_param("total_memory_load_of_model", memory_per_model + memory_per_grad + memory_per_optim)
+    log_param("total_params", total_params, context=context)
+    log_param("memory_of_model", memory_per_model, context=context)
+    log_param("total_memory_load_of_model", memory_per_model + memory_per_grad + memory_per_optim, context=context)
 
-# TODO: refactor, this is terrible
-def safe_get_attr(dic, node, attr, attr_label=None):
-    if attr_label is None: 
-        attr_label = str(attr) 
-
-    try: 
-        if attr == "type": 
-            dic[attr_label] = str(type(node))
-        elif attr == "weight.dtype": 
-            dic[attr_label] = str(node.weight.dtype)
-        else: 
-            dic[attr_label] = str(getattr(node, attr))
-    except AttributeError: 
-        pass
-        # print(dic, node, attr, attr_label)
-
-def nested_model(m: torch.nn.Module):
+def _get_nested_model_desc(m: torch.nn.Module):
     children = dict(m.named_children())
     output = {}
     if children == {}:
         node = {}
-        safe_get_attr(node, m, "type", attr_label="layer_type")
-        safe_get_attr(node, m, "in_features")
-        safe_get_attr(node, m, "out_features")
-        safe_get_attr(node, m, "in_channels")
-        safe_get_attr(node, m, "out_channels")
-        safe_get_attr(node, m, "kernel_size")
-        safe_get_attr(node, m, "stride")
-        safe_get_attr(node, m, "padding")
+        funcs._safe_get_model_attr(node, m, "type", attr_label="layer_type")
+        funcs._safe_get_model_attr(node, m, "in_features")
+        funcs._safe_get_model_attr(node, m, "out_features")
+        funcs._safe_get_model_attr(node, m, "in_channels")
+        funcs._safe_get_model_attr(node, m, "out_channels")
+        funcs._safe_get_model_attr(node, m, "kernel_size")
+        funcs._safe_get_model_attr(node, m, "stride")
+        funcs._safe_get_model_attr(node, m, "padding")
+        funcs._safe_get_model_attr(node, m, "weight.dtype", attr_label="dtype")
         # safe_get_attr(node, m, "bias", attr_label="layer_bias")
-        safe_get_attr(node, m, "weight.dtype", attr_label="dtype")
         return node
     else:
         for name, child in children.items():
-            try:
-                output[name] = nested_model(child)
-            except TypeError:
-                output[name] = nested_model(child)
+            output[name] = _get_nested_model_desc(child)
 
     return output
 
-def log_model_layers_description(model: Union[torch.nn.Module, Any], model_name : str): 
-    mo = nested_model(model)
+def _log_model_layers_description(model_name : str, model: Union[torch.nn.Module, Any], context): 
+    mo = _get_nested_model_desc(model)
     
     path = os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, model_name)
     if not os.path.exists(path):
@@ -155,11 +136,12 @@ def log_model_layers_description(model: Union[torch.nn.Module, Any], model_name 
     with open(f"{path}/{model_name}_layers_description.json", "w") as fp:
         json.dump(mo , fp) 
 
-    log_artifact(model_name, f"{path}/{model_name}_layers_description.json", Context.EVALUATION, log_copy_in_prov_directory=False, is_model=False)
+    log_artifact(model_name, f"{path}/{model_name}_layers_description.json", context=context, log_copy_in_prov_directory=False, is_model=False)
 
 def log_model(
+        model_name: str, 
         model: Union[torch.nn.Module, Any], 
-        model_name: str = "default", 
+        context : Optional[Contexts] = None, 
         log_model_info: bool = True, 
         log_model_layers : bool = False,
         log_as_artifact : bool = True, 
@@ -174,15 +156,15 @@ def log_model(
         log_as_artifact (bool, optional): Whether to log the model as an artifact. Defaults to True.
     """
     if log_model_info:
-        log_model_memory_footprint(model, model_name)
+        _log_model_memory_footprint(model_name, model, context)
 
     if log_model_layers: 
-        log_model_layers_description(model, model_name)
+        _log_model_layers_description(model_name, model, context)
 
     if log_as_artifact:
-        save_model_version(model, model_name, Context.EVALUATION, incremental=False)
+        save_model_version(model_name, model, context, incremental=False)
         
-def log_flops_per_epoch(label: str, model: Any, dataset: Any, context: Context, step: Optional[int] = None) -> None:
+def log_flops_per_epoch(label: str, model: Any, dataset: Any, context: Contexts, step: Optional[int] = None) -> None:
     """Logs the number of FLOPs (floating point operations) per epoch for the given model and dataset.
     
     Args:
@@ -197,7 +179,7 @@ def log_flops_per_epoch(label: str, model: Any, dataset: Any, context: Context, 
     """
     return log_metric(label, flops_utils.get_flops_per_epoch(model, dataset), context, step=step, source=LoggingItemKind.FLOPS_PER_EPOCH)
 
-def log_flops_per_batch(label: str, model: Any, batch: Any, context: Context, step: Optional[int] = None) -> None:
+def log_flops_per_batch(label: str, model: Any, batch: Any, context: Contexts, step: Optional[int] = None) -> None:
     """Logs the number of FLOPs (floating point operations) per batch for the given model and batch of data.
     
     Args:
@@ -213,7 +195,7 @@ def log_flops_per_batch(label: str, model: Any, batch: Any, context: Context, st
     return log_metric(label, flops_utils.get_flops_per_batch(model, batch), context, step=step, source=LoggingItemKind.FLOPS_PER_BATCH)
 
 def log_system_metrics(
-    context: Context,
+    context: Contexts,
     step: Optional[int] = None,
     ) -> None:
     """Logs system metrics such as CPU usage, memory usage, disk usage, and GPU metrics.
@@ -234,7 +216,7 @@ def log_system_metrics(
     log_metric("gpu_power_usage", system_utils.get_gpu_power_usage(), context, step=step, source=LoggingItemKind.SYSTEM_METRIC)
 
 def log_carbon_metrics(
-    context: Context,
+    context: Contexts,
     step: Optional[int] = None,
     ):
     """Logs carbon emissions metrics such as energy consumed, emissions rate, and power consumption.
@@ -259,11 +241,10 @@ def log_carbon_metrics(
     log_metric("energy_consumed", emissions.energy_consumed, context, step=step, source=LoggingItemKind.CARBON_METRIC)
 
 def log_artifact(
+        artifact_name : str, 
         artifact_path : str, 
-        value : Any, 
-        context: Context,
+        context: Contexts,
         step: Optional[int] = None, 
-        timestamp: Optional[int] = None, 
         log_copy_in_prov_directory : bool = True, 
         is_model=False
     ) -> None:
@@ -279,15 +260,20 @@ def log_artifact(
     Returns:
         None
     """
-    timestamp = timestamp or funcs.get_current_time_millis()
-    PROV4ML_DATA.add_artifact(artifact_path, value=value, step=step, context=context, timestamp=timestamp, log_copy_in_prov_directory=log_copy_in_prov_directory, is_model=is_model)
+    PROV4ML_DATA.add_artifact(
+        artifact_name=artifact_name, 
+        artifact_path=artifact_path, 
+        step=step, 
+        context=context, 
+        log_copy_in_prov_directory=log_copy_in_prov_directory, 
+        is_model=is_model
+    )
 
 def save_model_version(
-        model: Union[torch.nn.Module, Any], 
         model_name: str, 
-        context: Context, 
+        model: Union[torch.nn.Module, Any], 
+        context: Optional[Contexts] = None, 
         step: Optional[int] = None, 
-        timestamp: Optional[int] = None, 
         incremental=True, 
     ) -> None:
     """
@@ -312,12 +298,12 @@ def save_model_version(
     if incremental: 
         num_files = len([file for file in os.listdir(path) if str(file).startswith(model_name)])
         torch.save(model.state_dict(), f"{path}/{model_name}_{num_files}.pth")
-        log_artifact(f"{path}/{model_name}_{num_files}.pth", model_name, context=context, step=step, timestamp=timestamp, log_copy_in_prov_directory=False, is_model=True)
+        log_artifact(f"{model_name}_{num_files}", f"{path}/{model_name}_{num_files}.pth", context=context, step=step, log_copy_in_prov_directory=False, is_model=True)
     else: 
         torch.save(model.state_dict(), f"{path}/{model_name}.pth")
-        log_artifact(f"{path}/{model_name}.pth", model_name, context=context, step=step, timestamp=timestamp, log_copy_in_prov_directory=False, is_model=True)
+        log_artifact(model_name, f"{path}/{model_name}.pth", context=context, step=step, log_copy_in_prov_directory=False, is_model=True)
 
-def log_dataset(dataset : Union[DataLoader, Subset, Dataset], label : str): 
+def log_dataset(dataset_label : str, dataset : Union[DataLoader, Subset, Dataset]): 
     """
     Logs dataset statistics such as total samples and total steps.
 
@@ -332,19 +318,18 @@ def log_dataset(dataset : Union[DataLoader, Subset, Dataset], label : str):
     if isinstance(dataset, DataLoader):
         dl = dataset
         dataset = dl.dataset
-
-        log_param(f"{label}_dataset_stat_batch_size", dl.batch_size)
-        log_param(f"{label}_dataset_stat_num_workers", dl.num_workers)
-        # log_param(f"{label}_dataset_stat_shuffle", dl.shuffle)
-        log_param(f"{label}_dataset_stat_total_steps", len(dl))
+        log_param(f"{dataset_label}_dataset_stat_batch_size", dl.batch_size)
+        log_param(f"{dataset_label}_dataset_stat_num_workers", dl.num_workers)
+        log_param(f"{dataset_label}_dataset_stat_shuffle", isinstance(dl.sampler, RandomSampler))
+        log_param(f"{dataset_label}_dataset_stat_total_steps", len(dl))
 
     elif isinstance(dataset, Subset):
         dl = dataset
         dataset = dl.dataset
-        log_param(f"{label}_dataset_stat_total_steps", len(dl))
+        log_param(f"{dataset_label}_dataset_stat_total_steps", len(dl))
 
     total_samples = len(dataset)
-    log_param(f"{label}_dataset_stat_total_samples", total_samples)
+    log_param(f"{dataset_label}_dataset_stat_total_samples", total_samples)
 
 def register_final_metric(
         metric_name : str,
@@ -387,6 +372,9 @@ def get_git_remote_url() -> Optional[str]:
         print("Not found")
         return None  # No remote found
 
+def get_git_revision_hash() -> str:
+    return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
+
 def log_source_code(path: Optional[str] = None) -> None:
     """
     Logs the source code location, either from a Git repository or a specified path.
@@ -397,36 +385,19 @@ def log_source_code(path: Optional[str] = None) -> None:
     if path is None:
         repo = get_git_remote_url()
         if repo is not None:
-            log_param("prov-ml:source_code", repo)
-            # TODO: also log the git commit
+            commit_hash = get_git_revision_hash()
+            log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", f"{repo}/{commit_hash}")
     else:
         try:
             p = Path(path)
             if p.is_file():
-                log_artifact(p.name, p, context=Context.EVALUATION, log_copy_in_prov_directory=True, is_model=False)
-                log_param("prov-ml:source_code", PROV4ML_DATA.ARTIFACTS_DIR + p.name)
+                log_artifact(p.name, p, context=Contexts.TESTING, log_copy_in_prov_directory=True, is_model=False)
+                log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", PROV4ML_DATA.ARTIFACTS_DIR + p.name)
             else:
-                PROV4ML_DATA.add_artifact_directory("source_code", p, log_copy_in_prov_directory=True)
-                log_param("prov-ml:source_code", PROV4ML_DATA.ARTIFACTS_DIR + "/source_code")
+                log_artifact("source_code", p, context=Contexts.TESTING, log_copy_in_prov_directory=True, is_model=False)
+                log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", PROV4ML_DATA.ARTIFACTS_DIR + "/source_code")
         except Exception:
-            print(f"Path: {path} is invalid")
+            print(f"-----> Path: {path} is invalid")
 
-def log_input(inp: str, log_copy_in_prov_directory: bool = True) -> None:
-    """
-    Logs the input data.
-    
-    Args: 
-        inp (str): The input data to be logged.
-        log_copy_in_prov_directory (bool): Whether to copy the input into the provenance directory.
-    """
-    PROV4ML_DATA.add_input(inp, log_copy_in_prov_directory=log_copy_in_prov_directory)
-
-def log_output(out: str, log_copy_in_prov_directory: bool = True) -> None:
-    """
-    Logs the output data.
-    
-    Args: 
-        out (str): The output data to be logged.
-        log_copy_in_prov_directory (bool): Whether to copy the output into the provenance directory.
-    """
-    PROV4ML_DATA.add_output(out, log_copy_in_prov_directory=log_copy_in_prov_directory)
+def create_context(context : str, is_subcontext_of=None): 
+    PROV4ML_DATA.add_context(context, is_subcontext_of=is_subcontext_of)

@@ -6,7 +6,7 @@ from argparse import Namespace
 from torch import Tensor
 
 from prov4ml.logging_aux import log_param, log_metric
-from prov4ml.provenance.context import Context
+from prov4ml.datamodel.context import Contexts
 
 class ProvMLLogger(Logger):
     def __init__(
@@ -89,7 +89,7 @@ class ProvMLLogger(Logger):
         self, 
         metrics: Dict[str, Union[Tensor, float]], 
         step: Optional[int] = None, 
-        context : Optional[Context] = None
+        context : Optional[Contexts] = None
         ) -> None:
         """
         Logs the provided metrics to the MLflow tracking context.
@@ -101,7 +101,7 @@ class ProvMLLogger(Logger):
         print(metrics)
         print(step)
         print(context)
-        log_metric(list(metrics.keys())[0], metrics[list(metrics.keys())[0]], context=Context.TRAINING, step=metrics["epoch"])
+        log_metric(list(metrics.keys())[0], metrics[list(metrics.keys())[0]], context=Contexts.TRAINING, step=metrics["epoch"])
     
     @override
     def log_hyperparams(self, params: Union[Dict[str, Any], Namespace]) -> None:

@@ -1,6 +1,5 @@
 
 from typing import Any, Optional
-import warnings
 
 from prov4ml.utils.funcs import get_current_time_millis
 
@@ -23,15 +22,14 @@ class ArtifactInfo:
         value: Any = None, 
         step: Optional[int] = None, 
         context: Optional[Any] = None, 
-        timestamp: Optional[int] = None, 
         is_model : bool = False, 
     ) -> None:
         self.path = name
         self.value = value
         self.step = step
         self.context = context
-        self.creation_timestamp = timestamp
-        self.last_modified_timestamp = timestamp
+        self.creation_timestamp = get_current_time_millis()
+        self.last_modified_timestamp = get_current_time_millis()
 
         self.is_model_version = is_model
 
@@ -53,23 +51,3 @@ class ArtifactInfo:
         self.step = step if step is not None else self.step
         self.context = context if context is not None else self.context
         self.last_modified_timestamp = get_current_time_millis()
-
-
-# def artifact_is_pytorch_model(artifact: Any) -> bool:
-#     """
-#     Checks if the given artifact is a PyTorch model file.
-
-#     Parameters:
-#         artifact (Any): The artifact to check. Should have a 'path' attribute.
-
-#     Returns:
-#         bool: True if the artifact is a PyTorch model file, False otherwise.
-#     """
-
-#     if type(artifact) is str: 
-#         return artifact.endswith(".pt") or artifact.endswith(".pth") or artifact.endswith(".torch")
-#     elif type(artifact) is ArtifactInfo:
-#         return artifact.path.endswith(".pt") or artifact.path.endswith(".pth") or artifact.path.endswith(".torch")
-        
-#     warnings.warn("Artifact is not a string or ArtifactInfo object. Cannot determine if it is a PyTorch model.")
-#     return False

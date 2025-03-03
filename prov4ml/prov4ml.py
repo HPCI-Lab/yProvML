@@ -65,7 +65,7 @@ def start_run_ctx(
     if create_svg and not create_graph:
         raise ValueError("Cannot create SVG without creating the graph.")
 
-    PROV4ML_DATA.init(
+    PROV4ML_DATA.start_run(
         experiment_name=experiment_name, 
         prov_save_path=provenance_save_dir, 
         user_namespace=prov_user_namespace, 
@@ -125,7 +125,7 @@ def start_run(
     --------
     None
     """
-    PROV4ML_DATA.init(
+    PROV4ML_DATA.start_run(
         experiment_name=experiment_name, 
         prov_save_path=provenance_save_dir, 
         user_namespace=prov_user_namespace, 
@@ -171,7 +171,15 @@ def end_run(
     
     log_execution_end_time()
 
-    # save remaining metrics
+    found = False
+    for root, d, filenames in os.walk('./'):
+        for filename in filenames:
+            if filename == "requirements.txt": 
+                PROV4ML_DATA.add_artifact("requirements", os.path.join(root, filename), step=0, context=None, is_input=True)
+                found = True
+            if found: break
+        if found: break
+
     PROV4ML_DATA.save_all_metrics()
 
     doc = create_prov_document()
@@ -183,4 +191,3 @@ def end_run(
     
     path_graph = os.path.join(PROV4ML_DATA.EXPERIMENT_DIR, graph_filename)
     save_prov_file(doc, path_graph, create_graph, create_svg)
-

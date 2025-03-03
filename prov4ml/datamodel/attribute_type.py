@@ -1,6 +1,5 @@
 
 import sys
-from typing import Any
 from enum import Enum
 
 class LoggingItemKind(Enum): 
@@ -44,70 +43,35 @@ class LoggingItemKind(Enum):
     FINAL_MODEL_VERSION = 'model_version_final'
     PARAMETER = 'param'
 
-
-class Prov4MLAttribute:
+def get_source_from_kind(kind: LoggingItemKind) -> str:
     """
-    A class for managing attributes related to provenance data collection and logging.
+    Returns the source string based on the logging item kind.
 
-    This class provides static methods to retrieve attribute information and sources
-    based on different logging item kinds.
+    Parameters:
+    -----------
+    kind : LoggingItemKind
+        The type of logging item which determines the source.
 
-    Methods:
+    Returns:
     --------
-    get_attr(value: Any) -> str
-        Converts a given value to its string representation.
-    get_source_from_kind(kind: LoggingItemKind) -> str
-        Returns a source string based on the type of logging item kind.
+    str
+        The source string associated with the provided logging item kind.
     """
-
-    @staticmethod
-    def get_attr(value: Any) -> str:
-        """
-        Converts the given value to its string representation.
-
-        Parameters:
-        -----------
-        value : Any
-            The value to be converted to a string.
-
-        Returns:
-        --------
-        str
-            The string representation of the provided value.
-        """
-
-        return str(value)
-    
-    @staticmethod
-    def get_source_from_kind(kind: LoggingItemKind) -> str:
-        """
-        Returns the source string based on the logging item kind.
-
-        Parameters:
-        -----------
-        kind : LoggingItemKind
-            The type of logging item which determines the source.
-
-        Returns:
-        --------
-        str
-            The source string associated with the provided logging item kind.
-        """
-        if kind == LoggingItemKind.METRIC or kind == None:
-            return 'custom_metric'
-        elif kind == LoggingItemKind.FLOPS_PER_BATCH or kind == LoggingItemKind.FLOPS_PER_EPOCH:
-            return 'fvcore.nn.FlopCountAnalysis'
-        elif kind == LoggingItemKind.SYSTEM_METRIC:
-            if sys.platform != 'darwin':
-                return 'pyamdgpuinfo'
-            else: 
-                return "apple_gpu"            
-        elif kind == LoggingItemKind.CARBON_METRIC:
-            return 'codecarbon'
-        elif kind == LoggingItemKind.EXECUTION_TIME:
-            return 'std.time'
-        elif kind == LoggingItemKind.MODEL_VERSION or kind == LoggingItemKind.FINAL_MODEL_VERSION:
-            return 'torch'
-        else:
-            return ""
+    if kind == LoggingItemKind.METRIC or kind == None:
+        return 'custom_metric'
+    elif kind == LoggingItemKind.FLOPS_PER_BATCH or kind == LoggingItemKind.FLOPS_PER_EPOCH:
+        return 'fvcore.nn.FlopCountAnalysis'
+    elif kind == LoggingItemKind.SYSTEM_METRIC:
+        if sys.platform != 'darwin':
+            return 'pyamdgpuinfo'
+        else: 
+            return "apple_gpu"            
+    elif kind == LoggingItemKind.CARBON_METRIC:
+        return 'codecarbon'
+    elif kind == LoggingItemKind.EXECUTION_TIME:
+        return 'std.time'
+    elif kind == LoggingItemKind.MODEL_VERSION or kind == LoggingItemKind.FINAL_MODEL_VERSION:
+        return 'torch'
+    else:
+        return ""
 

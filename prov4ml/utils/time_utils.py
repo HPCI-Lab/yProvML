@@ -19,6 +19,7 @@ def timestamp_to_minutes(ts):
 def timestamp_to_seconds(ts):
     return ts / 1000
 
+
 def check_timer(label): 
     global DATA
     t = time.time()
@@ -27,7 +28,6 @@ def check_timer(label):
         DATA[label] = t - DATA[label]
     else: 
         DATA[label] = t
-
 
 def save_times(filename): 
     global DATA 

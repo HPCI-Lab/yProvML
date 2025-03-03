@@ -4,6 +4,20 @@ import torch
 from typing import Optional
 import time
 
+def _safe_get_model_attr(dic, node, attr, attr_label=None):
+    if attr_label is None: 
+        attr_label = str(attr) 
+
+    try: 
+        if attr == "type": 
+            dic[attr_label] = str(type(node))
+        elif attr == "weight.dtype": 
+            dic[attr_label] = str(node.weight.dtype)
+        else: 
+            dic[attr_label] = str(getattr(node, attr))
+    except AttributeError: 
+        pass
+
 def prov4ml_experiment_matches(
         experiment_name : str,
         exp_folder : str
@@ -74,7 +88,6 @@ def get_global_rank() -> Optional[int]:
         return int(os.getenv("SLURM_PROCID", None))
     
     return 0
-
 
 def get_runtime_type(): 
     """
