@@ -6,6 +6,8 @@ class Contexts(Enum):
     TRAINING = "TRAINING"
     VALIDATION = "VALIDATION"
     TESTING = "TESTING"
+    DATASETS = "DATASETS"
+    MODELS = "MODELS"
 
     @staticmethod
     def get_context_from_string(context: str): 
@@ -18,11 +20,12 @@ class Contexts(Enum):
         Returns:
             Context: The context enum.
         """
-        if context == 'training' or context == 'Contexts.TRAINING':
-            return Contexts.TRAINING
-        elif context == 'evaluation' or context == 'Contexts.TESTING':
-            return Contexts.TESTING
-        elif context == 'validation' or context == 'Contexts.VALIDATION':
-            return Contexts.VALIDATION
-        else:
-            raise ValueError(f"Invalid context: {context}")
+        try: 
+            context = eval(context)
+            if type(context) == Contexts: 
+                return context
+            else: 
+                raise ValueError(f"Invalid context: {context}")
+        except: 
+            raise ValueError(f"Not a context: {context}")
+            

@@ -4,6 +4,7 @@ import json
 import warnings
 import subprocess
 from pathlib import Path
+import prov.model as prov
 
 from torch.utils.data import DataLoader, Subset, Dataset, RandomSampler
 from typing import Any, Optional, Union
@@ -69,7 +70,7 @@ def log_param(key: str, value: Any, context : Contexts = None) -> None:
     """
     PROV4ML_DATA.add_parameter(key,value, context)
 
-def _log_model_memory_footprint(model_name: str, model: Union[torch.nn.Module, Any], context : Optional[Contexts] = None) -> None:
+def _get_model_memory_footprint(model_name: str, model: Union[torch.nn.Module, Any]) -> dict:
     """Logs the memory footprint of the provided model.
     
     Args:
@@ -79,7 +80,8 @@ def _log_model_memory_footprint(model_name: str, model: Union[torch.nn.Module, A
     Returns:
         None
     """
-    log_param("model_name", model_name, context=context)
+    ret = {"model_name": model_name}
+
 
     total_params = sum(p.numel() for p in model.parameters())
     try: 
@@ -101,9 +103,11 @@ def _log_model_memory_footprint(model_name: str, model: Union[torch.nn.Module, A
     memory_per_grad = total_params * 4 * 1e-6
     memory_per_optim = total_params * 4 * 1e-6
     
-    log_param("total_params", total_params, context=context)
-    log_param("memory_of_model", memory_per_model, context=context)
-    log_param("total_memory_load_of_model", memory_per_model + memory_per_grad + memory_per_optim, context=context)
+    ret["total_params"] = total_params
+    ret["memory_of_model"] = memory_per_model
+    ret["total_memory_load_of_model"] = memory_per_model + memory_per_grad + memory_per_optim
+
+    return ret
 
 def _get_nested_model_desc(m: torch.nn.Module):
     children = dict(m.named_children())
@@ -127,7 +131,7 @@ def _get_nested_model_desc(m: torch.nn.Module):
 
     return output
 
-def _log_model_layers_description(model_name : str, model: Union[torch.nn.Module, Any], context): 
+def _get_model_layers_description(model_name : str, model: Union[torch.nn.Module, Any]) -> prov.ProvEntity: 
     mo = _get_nested_model_desc(model)
     
     path = os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, model_name)
@@ -136,15 +140,16 @@ def _log_model_layers_description(model_name : str, model: Union[torch.nn.Module
     with open(f"{path}/{model_name}_layers_description.json", "w") as fp:
         json.dump(mo , fp) 
 
-    log_artifact(model_name, f"{path}/{model_name}_layers_description.json", context=context, log_copy_in_prov_directory=False, is_model=False)
+    return {
+        "layers_description_path": f"{path}/{model_name}_layers_description.json"
+    }
 
 def log_model(
         model_name: str, 
         model: Union[torch.nn.Module, Any], 
-        context : Optional[Contexts] = None, 
         log_model_info: bool = True, 
         log_model_layers : bool = False,
-        log_as_artifact : bool = True, 
+        is_input: bool = False,
     ) -> None:
     """Logs the provided model as artifact and logs memory footprint of the model. 
     
@@ -155,14 +160,16 @@ def log_model(
         log_model_layers (bool, optional): Whether to log model layers details. Defaults to False.
         log_as_artifact (bool, optional): Whether to log the model as an artifact. Defaults to True.
     """
+    e = save_model_version(model_name, model, Contexts.MODELS, incremental=False, is_input=is_input)
+
     if log_model_info:
-        _log_model_memory_footprint(model_name, model, context)
+        d = _get_model_memory_footprint(model_name, model)
+        e.add_attributes(d)
 
     if log_model_layers: 
-        _log_model_layers_description(model_name, model, context)
+        d = _get_model_layers_description(model_name, model)
+        e.add_attributes(d)
 
-    if log_as_artifact:
-        save_model_version(model_name, model, context, incremental=False)
         
 def log_flops_per_epoch(label: str, model: Any, dataset: Any, context: Contexts, step: Optional[int] = None) -> None:
     """Logs the number of FLOPs (floating point operations) per epoch for the given model and dataset.
@@ -243,11 +250,12 @@ def log_carbon_metrics(
 def log_artifact(
         artifact_name : str, 
         artifact_path : str, 
-        context: Contexts,
+        context: Optional[Contexts] = None,
         step: Optional[int] = None, 
         log_copy_in_prov_directory : bool = True, 
-        is_model=False
-    ) -> None:
+        is_model : bool = False, 
+        is_input : bool = False, 
+    ) -> prov.ProvEntity:
     """
     Logs the specified artifact to the given context.
 
@@ -260,13 +268,14 @@ def log_artifact(
     Returns:
         None
     """
-    PROV4ML_DATA.add_artifact(
+    return PROV4ML_DATA.add_artifact(
         artifact_name=artifact_name, 
         artifact_path=artifact_path, 
         step=step, 
         context=context, 
         log_copy_in_prov_directory=log_copy_in_prov_directory, 
-        is_model=is_model
+        is_model=is_model, 
+        is_input=is_input, 
     )
 
 def save_model_version(
@@ -274,8 +283,9 @@ def save_model_version(
         model: Union[torch.nn.Module, Any], 
         context: Optional[Contexts] = None, 
         step: Optional[int] = None, 
-        incremental=True, 
-    ) -> None:
+        incremental : bool = True, 
+        is_input : bool =False, 
+    ) -> prov.ProvEntity:
     """
     Saves the state dictionary of the provided model and logs it as an artifact.
     
@@ -298,10 +308,10 @@ def save_model_version(
     if incremental: 
         num_files = len([file for file in os.listdir(path) if str(file).startswith(model_name)])
         torch.save(model.state_dict(), f"{path}/{model_name}_{num_files}.pth")
-        log_artifact(f"{model_name}_{num_files}", f"{path}/{model_name}_{num_files}.pth", context=context, step=step, log_copy_in_prov_directory=False, is_model=True)
+        return log_artifact(f"{model_name}_{num_files}", f"{path}/{model_name}_{num_files}.pth", context=context, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=is_input)
     else: 
         torch.save(model.state_dict(), f"{path}/{model_name}.pth")
-        log_artifact(model_name, f"{path}/{model_name}.pth", context=context, step=step, log_copy_in_prov_directory=False, is_model=True)
+        return log_artifact(model_name, f"{path}/{model_name}.pth", context=context, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=is_input)
 
 def log_dataset(dataset_label : str, dataset : Union[DataLoader, Subset, Dataset]): 
     """
@@ -314,22 +324,26 @@ def log_dataset(dataset_label : str, dataset : Union[DataLoader, Subset, Dataset
     Returns:
         None
     """
+
+    e = log_artifact(f"{dataset_label}", "", context=Contexts.DATASETS, log_copy_in_prov_directory=False, is_model=False, is_input=True)
+    e.add_attributes({f"{dataset_label}_stat_total_samples": len(dataset)})
+
     # handle datasets from DataLoader
     if isinstance(dataset, DataLoader):
         dl = dataset
         dataset = dl.dataset
-        log_param(f"{dataset_label}_dataset_stat_batch_size", dl.batch_size)
-        log_param(f"{dataset_label}_dataset_stat_num_workers", dl.num_workers)
-        log_param(f"{dataset_label}_dataset_stat_shuffle", isinstance(dl.sampler, RandomSampler))
-        log_param(f"{dataset_label}_dataset_stat_total_steps", len(dl))
+        attrs = {
+            f"{dataset_label}_stat_batch_size": dl.batch_size, 
+            f"{dataset_label}_stat_num_workers": dl.num_workers, 
+            f"{dataset_label}_stat_shuffle": isinstance(dl.sampler, RandomSampler), 
+            f"{dataset_label}_stat_total_steps": len(dl), 
+        }
+        e.add_attributes(attrs)
 
     elif isinstance(dataset, Subset):
         dl = dataset
         dataset = dl.dataset
-        log_param(f"{dataset_label}_dataset_stat_total_steps", len(dl))
-
-    total_samples = len(dataset)
-    log_param(f"{dataset_label}_dataset_stat_total_samples", total_samples)
+        e.add_attributes({f"{dataset_label}_stat_total_steps": len(dl)})
 
 def register_final_metric(
         metric_name : str,
@@ -391,13 +405,13 @@ def log_source_code(path: Optional[str] = None) -> None:
         try:
             p = Path(path)
             if p.is_file():
-                log_artifact(p.name, p, context=Contexts.TESTING, log_copy_in_prov_directory=True, is_model=False)
+                e = log_artifact(p.name, p, log_copy_in_prov_directory=True, is_model=False, is_input=True)
                 log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", PROV4ML_DATA.ARTIFACTS_DIR + p.name)
             else:
-                log_artifact("source_code", p, context=Contexts.TESTING, log_copy_in_prov_directory=True, is_model=False)
+                log_artifact("source_code", p, log_copy_in_prov_directory=True, is_model=False, is_input=True)
                 log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", PROV4ML_DATA.ARTIFACTS_DIR + "/source_code")
         except Exception:
-            print(f"-----> Path: {path} is invalid")
+            print(f">Path: {path} is invalid")
 
 def create_context(context : str, is_subcontext_of=None): 
     PROV4ML_DATA.add_context(context, is_subcontext_of=is_subcontext_of)

@@ -31,14 +31,10 @@ class Prov4MLData:
         self.PROV_PREFIX = "yProv4ML"
         self.RUN_ID = 0
 
-        # self.inputs_count = 0
-        # self.outputs_count = 0
-
         self.global_rank = None
         self.is_collecting = False
 
         self.save_metrics_after_n_logs = 100
-        # self.TMP_DIR = "tmp"
         self.TMP_SEP = "\t"
 
     def start_run(
@@ -96,13 +92,14 @@ class Prov4MLData:
             f"{self.PROV_PREFIX}:provenance_path":self.PROV_SAVE_PATH,
             f"{self.PROV_PREFIX}:artifact_uri":self.ARTIFACTS_DIR,
             f"{self.PROV_PREFIX}:run_id":self.RUN_ID,
-            # f"{self.PROV_PREFIX}:type": "LearningStage"),
             f"{self.PROV_PREFIX}:python_version":str(sys.version), 
         })
         rootContext.wasAssociatedWith(user_ag)
         self._add_ctx(rootContext, Contexts.TRAINING)
         self._add_ctx(rootContext, Contexts.VALIDATION)
         self._add_ctx(rootContext, Contexts.TESTING)
+        self._add_ctx(rootContext, Contexts.DATASETS)
+        self._add_ctx(rootContext, Contexts.MODELS)
 
         global_rank = get_global_rank()
         runtime_type = get_runtime_type()
@@ -231,7 +228,7 @@ class Prov4MLData:
         is_input : bool = False, 
         log_copy_in_prov_directory : bool = True, 
         is_model = False, 
-    ) -> None:
+    ) -> prov.ProvEntity:
         if not self.is_collecting: return
 
         if context is None: 

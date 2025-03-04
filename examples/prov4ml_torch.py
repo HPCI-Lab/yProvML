@@ -99,7 +99,7 @@ for epoch in tqdm(range(EPOCHS)):
     prov4ml.log_metric("MSE_val", loss.item(), Contexts.VALIDATION, step=epoch)
     prov4ml.log_metric("Indices", indices, context=Contexts.TRAINING, step=epoch)
 
-prov4ml.log_model("mnist_model_final", mnist_model)
+prov4ml.log_model("mnist_model_final", mnist_model, log_model_layers=True, is_input=True)
 
 prov4ml.end_run(
     create_graph=True, 
