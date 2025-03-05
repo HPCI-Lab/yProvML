@@ -13,7 +13,7 @@ from prov4ml.datamodel.attribute_type import LoggingItemKind
 from prov4ml.utils import energy_utils, flops_utils, system_utils, time_utils, funcs
 from prov4ml.datamodel.context import Contexts
 from prov4ml.datamodel.cumulative_metrics import FoldOperation
-from prov4ml.constants import PROV4ML_DATA
+from prov4ml.constants import PROV4ML_DATA, VERBOSE
     
 def log_metric(
         key: str, 
@@ -94,7 +94,8 @@ def _get_model_memory_footprint(model_name: str, model: Union[torch.nn.Module, A
         else: 
             precision = 32
     except RuntimeError: 
-        warnings.warn("Could not determine precision, defaulting to 32 bits. Please make sure to provide a model with a trainer attached, this is often due to calling this before the trainer.fit() method")
+        if VERBOSE: 
+            warnings.warn("Could not determine precision, defaulting to 32 bits. Please make sure to provide a model with a trainer attached, this is often due to calling this before the trainer.fit() method")
         precision = 32
     
     precision_megabytes = precision / 8 / 1e6
@@ -383,7 +384,8 @@ def get_git_remote_url() -> Optional[str]:
         remote_url = subprocess.check_output(['git', 'config', '--get', 'remote.origin.url'], stderr=subprocess.DEVNULL).strip().decode()
         return remote_url
     except subprocess.CalledProcessError:
-        print("Not found")
+        if VERBOSE: 
+            print("> get_git_remote_url() Repository not found")
         return None  # No remote found
 
 def get_git_revision_hash() -> str:
@@ -411,7 +413,8 @@ def log_source_code(path: Optional[str] = None) -> None:
                 log_artifact("source_code", p, log_copy_in_prov_directory=True, is_model=False, is_input=True)
                 log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", PROV4ML_DATA.ARTIFACTS_DIR + "/source_code")
         except Exception:
-            print(f">Path: {path} is invalid")
+            if VERBOSE: 
+                print(f">log_source_code({path}): path is invalid")
 
 def create_context(context : str, is_subcontext_of=None): 
     PROV4ML_DATA.add_context(context, is_subcontext_of=is_subcontext_of)

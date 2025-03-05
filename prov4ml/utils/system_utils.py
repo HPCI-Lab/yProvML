@@ -4,14 +4,14 @@ import torch
 import sys
 import warnings
 
-from prov4ml.configs import SILENT
+from prov4ml.constants import VERBOSE
 
 if sys.platform != 'darwin':
     import GPUtil
     import gpustat
 
     if torch.cuda.device_count() == 0:
-        if not SILENT:
+        if VERBOSE:
             warnings.warn("No GPU found")
     elif "AMD" in torch.cuda.get_device_name(0): 
         import pyamdgpuinfo
@@ -78,7 +78,6 @@ def get_gpu_power_usage() -> float:
     """
     if sys.platform != 'darwin':
         if torch.cuda.device_count() == 0:
-            print("RET")
             return 0.0
 
         gpu_power = 0.0
@@ -150,7 +149,7 @@ def get_gpu_metric_amd(metric):
 
         return m
     except:
-        if not SILENT:
+        if VERBOSE:
             warnings.warn(f"Could not get metric: {metric}")
         return 0.0
 
@@ -170,7 +169,7 @@ def get_gpu_metric_nvidia(metric):
     elif metric == 'memory_total':
         return device.memory_total_human()
     else: 
-        if not SILENT:
+        if VERBOSE:
             warnings.warn(f"Could not get metric: {metric}")
         return 0.0
 
@@ -185,7 +184,7 @@ def get_gpu_metric_gputil(metric):
         else: 
             return 0.0
     else:
-        if not SILENT:
+        if VERBOSE:
             warnings.warn(f"Could not get metric: {metric}")
         return 0.0
 
@@ -200,6 +199,6 @@ def get_gpu_metric_apple(metric):
     elif metric == 'memory':
         return statistics['Alloc system memory']
     else: 
-        if not SILENT:
+        if VERBOSE:
             warnings.warn(f"Could not get metric: {metric}")
         return 0.0
