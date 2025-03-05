@@ -163,8 +163,7 @@ class ProvMLItwinAILogger(Logger):
             save_model_version(
                 model=item, model_name=identifier, context=context, step=step)
         elif kind == 'best_model':
-            log_model(model=item, model_name=identifier,
-                              log_model_info=True, log_as_artifact=True)
+            log_model(model=item, model_name=identifier, log_model_info=True, log_model_layers = False, is_input = False)
         elif kind == 'torch':
             from torch.utils.data import DataLoader
             if isinstance(item, DataLoader):
