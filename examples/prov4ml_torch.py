@@ -23,7 +23,7 @@ prov4ml.start_run(
     provenance_save_dir="prov",
     save_after_n_logs=100,
     collect_all_processes=True, 
-    # disable_codecarbon=True
+    disable_codecarbon=True
 )
 
 class MNISTModel(nn.Module):
@@ -52,12 +52,12 @@ prov4ml.log_source_code("/Users/gabrielepadovani/Desktop/Università/Prov/ProvML
 # prov4ml.log_source_code()
 
 train_ds = MNIST(PATH_DATASETS, train=True, download=True, transform=tform)
-train_ds = IndexedDatasetWrapper(Subset(train_ds, range(BATCH_SIZE*2)))
+train_ds = IndexedDatasetWrapper(Subset(train_ds, range(BATCH_SIZE*200)))
 train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
 prov4ml.log_dataset("train_dataset", train_loader)
 
 test_ds = MNIST(PATH_DATASETS, train=False, download=True, transform=tform)
-test_ds = IndexedDatasetWrapper(Subset(test_ds, range(BATCH_SIZE*2)))
+test_ds = IndexedDatasetWrapper(Subset(test_ds, range(BATCH_SIZE*20)))
 test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE)
 prov4ml.log_dataset("val_dataset", test_loader)
 
@@ -83,7 +83,7 @@ for epoch in range(EPOCHS):
         # log system and carbon metrics (once per epoch), as well as the execution time
         prov4ml.log_metric("MSE_train", loss.item(), context=Contexts.TRAINING, step=epoch)
         prov4ml.log_metric("Indices", indices.tolist(), context=Contexts.TRAINING, step=epoch)
-        prov4ml.log_carbon_metrics(Contexts.TRAINING, step=epoch)
+        # prov4ml.log_carbon_metrics(Contexts.TRAINING, step=epoch)
         prov4ml.log_system_metrics(Contexts.TRAINING, step=epoch)
     # save incremental model versions
     prov4ml.save_model_version(f"mnist_model_version", mnist_model, Contexts.TRAINING, epoch)

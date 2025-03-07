@@ -40,8 +40,8 @@ def create_prov_document() -> prov.ProvDocument:
             # 'prov-ml:metric_epoch_list': str(epochs), 
             # 'prov-ml:metric_value_list': str(values),
             # 'prov-ml:metric_timestamp_list': str(timestamps),
-            'prov-ml:context': str(ctx),
-            'prov-ml:source': str(source)
+            f'{PROV4ML_DATA.PROV_PREFIX}:context': str(ctx),
+            f'{PROV4ML_DATA.PROV_PREFIX}:source': str(source)
         })
 
     return doc

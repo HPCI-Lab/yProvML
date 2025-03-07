@@ -107,13 +107,13 @@ class Prov4MLData:
             node_rank = os.getenv("SLURM_NODEID", None)
             local_rank = os.getenv("SLURM_LOCALID", None) 
             rootContext.add_attributes({
-                "prov-ml:global_rank": str(global_rank),
-                "prov-ml:local_rank":str(local_rank),
-                "prov-ml:node_rank":str(node_rank),
+                f"{self.PROV_PREFIX}:global_rank": str(global_rank),
+                f"{self.PROV_PREFIX}:local_rank":str(local_rank),
+                f"{self.PROV_PREFIX}:node_rank":str(node_rank),
             })
         elif runtime_type == "single_core":
             rootContext.add_attributes({
-                "prov-ml:global_rank":str(global_rank)
+                f"{self.PROV_PREFIX}:global_rank":str(global_rank)
             })
 
 
@@ -141,9 +141,9 @@ class Prov4MLData:
         else: 
             parent_context = get_activity(self.root_provenance_doc,'context:'+ str(Contexts.EXPERIMENT))
 
-        level=list(parent_context.get_attribute('yProv4ML:level'))[0]
+        level=list(parent_context.get_attribute(f'{self.PROV_PREFIX}:level'))[0]
         new_context.wasInformedBy(parent_context)
-        new_context.add_attributes({'yProv4ML:level':level+1})
+        new_context.add_attributes({f'{self.PROV_PREFIX}:level':level+1})
 
     def add_metric(
         self, 
@@ -250,14 +250,14 @@ class Prov4MLData:
         self.artifacts[(artifact_name, context)] = ArtifactInfo(artifact_name, artifact_path, step, context=context, is_model=is_model)
 
         attributes = {
-            'prov:label': artifact_name, 
-            'prov:path': artifact_path,
+            f'{self.PROV_PREFIX}:label': artifact_name, 
+            f'{self.PROV_PREFIX}:path': artifact_path,
         }
         if is_input: 
-            attributes.setdefault('yProv4ML:role','input')
+            attributes.setdefault(f'{self.PROV_PREFIX}:role','input')
             return self._log_input(artifact_name, context, attributes)
         else: 
-            attributes.setdefault('yProv4ML:role', 'output')
+            attributes.setdefault(f'{self.PROV_PREFIX}:role', 'output')
             return self._log_output(artifact_name, context, attributes)
 
     def get_artifacts(self) -> List[ArtifactInfo]:
