@@ -109,4 +109,4 @@ prov4ml.log_dataset("test_dataset", test_loader)
 result = trainer.test(mnist_model, test_loader)
 
 # save the provenance graphs
-prov4ml.end_run(create_graph=True, create_svg=True)
+prov4ml.end_run(create_graph=True, create_svg=True, crate_ro_crate=True)

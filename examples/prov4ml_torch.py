@@ -10,11 +10,10 @@ sys.path.append("../ProvML")
 
 import prov4ml
 from prov4ml.wrappers.indexed_dataset import IndexedDatasetWrapper
-from prov4ml.datamodel.context import Contexts
 
 PATH_DATASETS = "./data"
 BATCH_SIZE = 4
-EPOCHS = 10
+EPOCHS = 1
 DEVICE = "mps"
 
 prov4ml.start_run(
@@ -81,12 +80,12 @@ for epoch in range(EPOCHS):
         losses.append(loss.item())
     
         # log system and carbon metrics (once per epoch), as well as the execution time
-        prov4ml.log_metric("MSE_train", loss.item(), context=Contexts.TRAINING, step=epoch)
-        prov4ml.log_metric("Indices", indices.tolist(), context=Contexts.TRAINING, step=epoch)
+        prov4ml.log_metric("MSE_train", loss.item(), context=prov4ml.Contexts.TRAINING, step=epoch)
+        prov4ml.log_metric("Indices", indices.tolist(), context=prov4ml.Contexts.TRAINING, step=epoch)
         # prov4ml.log_carbon_metrics(Contexts.TRAINING, step=epoch)
-        prov4ml.log_system_metrics(Contexts.TRAINING, step=epoch)
+        prov4ml.log_system_metrics(prov4ml.Contexts.TRAINING, step=epoch)
     # save incremental model versions
-    prov4ml.save_model_version(f"mnist_model_version", mnist_model, Contexts.TRAINING, epoch)
+    prov4ml.save_model_version(f"mnist_model_version", mnist_model, prov4ml.Contexts.MODELS, epoch)
 
     mnist_model.eval()
     # mnist_model.cpu()
@@ -96,12 +95,13 @@ for epoch in range(EPOCHS):
         y2 = F.one_hot(y, 10).float()
         loss = loss_fn(y_hat, y2)
 
-        prov4ml.log_metric("MSE_val", loss.item(), Contexts.VALIDATION, step=epoch)
-        prov4ml.log_metric("Indices", indices, context=Contexts.TRAINING, step=epoch)
+        prov4ml.log_metric("MSE_val", loss.item(), prov4ml.Contexts.VALIDATION, step=epoch)
+        prov4ml.log_metric("Indices", indices, context=prov4ml.Contexts.TRAINING, step=epoch)
 
-prov4ml.log_model("mnist_model_final", mnist_model, log_model_layers=True, is_input=True)
+prov4ml.log_model("mnist_model_final", mnist_model, log_model_layers=True, is_input=False)
 
 prov4ml.end_run(
     create_graph=True, 
-    create_svg=True
+    create_svg=True, 
+    crate_ro_crate=True
 )

@@ -27,6 +27,7 @@ class Prov4MLData:
         self.EXPERIMENT_NAME = "test_experiment"
         self.EXPERIMENT_DIR = "test_experiment_dir"
         self.ARTIFACTS_DIR = "artifact_dir"
+        self.METRIC_DIR = "metric_dir"
         self.USER_NAMESPACE = "user_namespace"
         self.PROV_PREFIX = "yProv4ML"
         self.RUN_ID = 0
@@ -66,6 +67,7 @@ class Prov4MLData:
         self.EXPERIMENT_DIR = os.path.join(self.PROV_SAVE_PATH, experiment_name + f"_{self.RUN_ID}")
         self.ARTIFACTS_DIR = os.path.join(self.EXPERIMENT_DIR, "artifacts")
         self.EXPERIMENT_NAME = f"{self.EXPERIMENT_NAME}_{self.RUN_ID}"
+        self.METRIC_DIR = os.path.join(self.EXPERIMENT_DIR, "metrics")
 
         self._init_root_context()
 
@@ -312,8 +314,10 @@ class Prov4MLData:
 
         if not os.path.exists(self.ARTIFACTS_DIR):
             os.makedirs(self.ARTIFACTS_DIR, exist_ok=True)
+        if not os.path.exists(self.METRIC_DIR):
+            os.makedirs(self.METRIC_DIR, exist_ok=True)
 
-        metric.save_to_file(self.ARTIFACTS_DIR, process=self.global_rank, sep=self.TMP_SEP)
+        metric.save_to_file(self.METRIC_DIR, process=self.global_rank, sep=self.TMP_SEP)
 
     def save_all_metrics(self) -> None:
         """

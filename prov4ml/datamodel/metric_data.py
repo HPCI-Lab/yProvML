@@ -98,10 +98,11 @@ class MetricInfo:
         --------
         None
         """
-        if process is not None:
-            file = os.path.join(path, f"{self.name}_{self.context}_GR{process}.csv")
-        else:
-            file = os.path.join(path, f"{self.name}_{self.context}.csv")
+        if process is None:
+            process = 0
+        file = os.path.join(path, f"{self.name}_{self.context}_GR{process}.csv")
+        # else:
+        #     file = os.path.join(path, f"{self.name}_{self.context}.csv")
         file_exists = os.path.exists(file)
 
         with open(file, "a") as f:

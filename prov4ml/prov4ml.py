@@ -6,7 +6,7 @@ from prov4ml.constants import PROV4ML_DATA
 from prov4ml.utils import energy_utils
 from prov4ml.utils import flops_utils
 from prov4ml.logging_aux import log_execution_start_time, log_execution_end_time
-from prov4ml.provenance.provenance_graph import create_prov_document
+from prov4ml.provenance.provenance_graph import create_prov_document, create_rocrate_in_dir
 from prov4ml.utils.file_utils import save_prov_file
 
 @contextmanager
@@ -143,6 +143,7 @@ def start_run(
 def end_run(
         create_graph: Optional[bool] = False, 
         create_svg: Optional[bool] = False, 
+        crate_ro_crate: Optional[bool]=False, 
     ):  
     """
     Finalizes the provenance data collection and optionally creates visualization and provenance collection files.
@@ -184,10 +185,14 @@ def end_run(
 
     doc = create_prov_document()
    
-    graph_filename = f'provgraph_{PROV4ML_DATA.EXPERIMENT_NAME}.json'
+    graph_filename = f'prov_{PROV4ML_DATA.EXPERIMENT_NAME}.json'
     
     if not os.path.exists(PROV4ML_DATA.EXPERIMENT_DIR):
         os.makedirs(PROV4ML_DATA.EXPERIMENT_DIR, exist_ok=True)
     
     path_graph = os.path.join(PROV4ML_DATA.EXPERIMENT_DIR, graph_filename)
     save_prov_file(doc, path_graph, create_graph, create_svg)
+
+    if crate_ro_crate: 
+        create_rocrate_in_dir(PROV4ML_DATA.EXPERIMENT_DIR)
+

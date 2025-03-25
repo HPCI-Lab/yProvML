@@ -62,7 +62,7 @@ def custom_prov_to_dot(
     bundle,
     show_nary=True,
     use_labels=False,
-    direction="BT",
+    direction="RL",
     show_element_attributes=True,
     show_relation_attributes=True,
 ):
