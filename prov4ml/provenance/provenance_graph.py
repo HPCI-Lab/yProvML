@@ -8,10 +8,11 @@ import getpass
 import subprocess
 import warnings
 import zarr
+import netCDF4 as nc
 from numpy import array, array2string, inf
 
 from prov4ml.constants import PROV4ML_DATA
-from prov4ml.datamodel.attribute_type import Prov4MLAttribute
+from prov4ml.datamodel.attribute_type import Prov4MLAttribute, LoggingItemKind
 from prov4ml.datamodel.artifact_data import artifact_is_pytorch_model
 from prov4ml.provenance.context import Context
 from prov4ml.provenance.metrics_type import MetricsType
@@ -144,7 +145,7 @@ def save_metric_from_file(
     """
     if PROV4ML_DATA.METRICS_FILE_TYPE == MetricsType.ZARR:
         dataset = zarr.open(os.path.join(PROV4ML_DATA.METRICS_DIR, metric_file), 'r')
-        source = ', '.join(dataset.attrs.values())
+        source = eval(dataset.attrs['source'])
 
         if not doc.get_record(f'{name}_{ctx}'):
             metric_entity = doc.entity(f'{name}_{ctx}',{
@@ -163,7 +164,7 @@ def save_metric_from_file(
     elif PROV4ML_DATA.METRICS_FILE_TYPE == MetricsType.TXT:
         with open(os.path.join(PROV4ML_DATA.METRICS_DIR, metric_file), 'r') as f:
             lines = f.readlines()
-            source = lines[0].split(',')[2]
+            source = eval(lines[0].split(',')[2])
 
         if not doc.get_record(f'{name}_{ctx}'):
             metric_entity = doc.entity(f'{name}_{ctx}',{
@@ -187,6 +188,24 @@ def save_metric_from_file(
         epochs = array(epochs, dtype='i4')
         values = array(values, dtype='f4')
         timestamps = array(timestamps, dtype='i8')
+
+    elif PROV4ML_DATA.METRICS_FILE_TYPE == MetricsType.NETCDF:
+        dataset = nc.Dataset(os.path.join(PROV4ML_DATA.METRICS_DIR, metric_file), mode='r')
+        source = eval(dataset._source)
+
+        if not doc.get_record(f'{name}_{ctx}'):
+            metric_entity = doc.entity(f'{name}_{ctx}',{
+                'prov-ml:type':Prov4MLAttribute.get_attr('Metric'),
+                'prov-ml:name':Prov4MLAttribute.get_attr(name),
+                'prov-ml:context':Prov4MLAttribute.get_attr(ctx),
+                'prov-ml:source':Prov4MLAttribute.get_source_from_kind(source),
+            })
+        else:
+            metric_entity = doc.get_record(f'{name}_{ctx}')[0]
+
+        epochs = dataset.variables['epochs'][:]
+        values = dataset.variables['values'][:]
+        timestamps = dataset.variables['timestamps'][:]
 
     else:
         raise ValueError(f"Unsupported file type: {PROV4ML_DATA.METRICS_FILE_TYPE}")

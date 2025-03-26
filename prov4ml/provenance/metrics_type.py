@@ -9,3 +9,4 @@ class MetricsType(Enum):
     """
     TXT = 'txt'
     ZARR = 'zarr'
+    NETCDF = 'netcdf'

@@ -4,6 +4,7 @@ import numpy as np
 from typing import Any, Dict, List
 from typing import Optional
 import zarr
+import netCDF4 as nc
 
 from prov4ml.datamodel.attribute_type import LoggingItemKind
 from prov4ml.provenance.metrics_type import MetricsType
@@ -113,10 +114,63 @@ class MetricInfo:
             self.save_to_zarr(file, use_compression)
         elif file_type == MetricsType.TXT:
             self.save_to_txt(file)
+        elif file_type == MetricsType.NETCDF:
+            self.save_to_netCDF(file)
         else:
             raise ValueError(f"Unsupported file type: {file_type}")
 
         self.epochDataList = {}
+
+    def save_to_netCDF(
+            self,
+            netcdf_file: str
+        ) -> None:
+        """
+        Saves the metric information in a netCDF file.
+
+        Parameters:
+        -----------
+        netcdf_file : str
+            The path to the netCDF file where the metric information will be saved.
+
+        Returns:
+        --------
+        None
+        """
+        if os.path.exists(netcdf_file):
+            dataset = nc.Dataset(netcdf_file, mode='a', format='NETCDF4')
+        else:
+            dataset = nc.Dataset(netcdf_file, mode='w', format='NETCDF4')
+
+            # Metadati
+            dataset._name = self.name
+            dataset._context = str(self.context)
+            dataset._source = str(self.source)
+
+            dataset.createDimension('time', None)
+
+            dataset.createVariable('epochs', 'i4', ('time',))
+            dataset.createVariable('values', 'f4', ('time',))
+            dataset.createVariable('timestamps', 'i8', ('time',))
+
+        epochs = []
+        values = []
+        timestamps = []
+
+        for epoch, items in self.epochDataList.items():
+            for value, timestamp in items:
+                epochs.append(epoch)
+                values.append(value)
+                timestamps.append(timestamp)
+
+        current_size = dataset.dimensions['time'].size
+        new_size = current_size + len(epochs)
+
+        dataset.variables['epochs'][current_size:new_size] = epochs
+        dataset.variables['values'][current_size:new_size] = values
+        dataset.variables['timestamps'][current_size:new_size] = timestamps
+
+        dataset.close()
 
     def save_to_zarr(
             self,
