@@ -168,7 +168,7 @@ class Prov4MLData:
         self.EXPERIMENT_DIR = os.path.join(self.PROV_SAVE_PATH, experiment_name + f"_{run_id}")
         self.RUN_ID = run_id
         self.ARTIFACTS_DIR = os.path.join(self.EXPERIMENT_DIR, "artifacts")
-        self.METRICS_DIR = os.path.join(self.EXPERIMENT_DIR, "metrics")
+        self.METRICS_DIR = os.path.join(self.ARTIFACTS_DIR, "metrics")
         self.METRICS_FILE_TYPE = metrics_file_type
         self.use_compression = use_compression
 

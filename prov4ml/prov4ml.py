@@ -6,7 +6,7 @@ from prov4ml.constants import PROV4ML_DATA
 from prov4ml.utils import energy_utils
 from prov4ml.utils import flops_utils
 from prov4ml.provenance.metrics_type import MetricsType
-from prov4ml.logging_aux import log_execution_start_time, log_execution_end_time
+from prov4ml.logging_aux import log_execution_start_time, log_execution_end_time, log_artifact, get_context_from_metric_file
 from prov4ml.provenance.provenance_graph import create_prov_document
 from prov4ml.utils.file_utils import save_prov_file
 
@@ -88,6 +88,14 @@ def start_run_ctx(
     yield None#current_run #return the mlflow context manager, same one as mlflow.start_run()
 
     log_execution_end_time()
+
+    # save remaining metrics
+    PROV4ML_DATA.save_all_metrics()
+
+    # add all metrics as artifacts
+    metrics_paths = [os.path.join(PROV4ML_DATA.METRICS_DIR, metric) for metric in os.listdir(PROV4ML_DATA.METRICS_DIR)]
+    for metric_path in metrics_paths:
+        log_artifact(metric_path, get_context_from_metric_file(metric_path))
 
     doc = create_prov_document()
 
@@ -182,6 +190,11 @@ def end_run(
 
     # save remaining metrics
     PROV4ML_DATA.save_all_metrics()
+
+    # add all metrics as artifacts
+    metrics_paths = [os.path.join(PROV4ML_DATA.METRICS_DIR, metric) for metric in os.listdir(PROV4ML_DATA.METRICS_DIR)]
+    for metric_path in metrics_paths:
+        log_artifact(metric_path, get_context_from_metric_file(metric_path))
 
     doc = create_prov_document()
    

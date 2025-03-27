@@ -1,6 +1,8 @@
 import os
 import torch
 import warnings
+import zarr
+import netCDF4 as nc
 
 from torch.utils.data import DataLoader, Subset, Dataset
 from typing import Any, Optional, Union
@@ -9,6 +11,7 @@ from prov4ml.datamodel.attribute_type import LoggingItemKind
 from prov4ml.utils import energy_utils, flops_utils, system_utils, time_utils, funcs
 from prov4ml.provenance.context import Context
 from prov4ml.datamodel.cumulative_metrics import FoldOperation
+from prov4ml.provenance.metrics_type import MetricsType
 from prov4ml.constants import PROV4ML_DATA
     
 def log_metric(key: str, value: float, context:Context, step: Optional[int] = None, source: LoggingItemKind = None) -> None:
@@ -285,3 +288,18 @@ def register_final_metric(
         None
     """
     PROV4ML_DATA.add_cumulative_metric(metric_name, initial_value, fold_operation)
+
+def get_context_from_metric_file(metric_file : str,) -> Context:
+    """
+    Retrieves the context from a metric file.
+
+    Args:
+        metric_file (str): The path to the metric file.
+
+    Returns:
+        Context: The context associated with the metric file.
+    """
+    if PROV4ML_DATA.METRICS_FILE_TYPE == MetricsType.TXT:
+        with open(metric_file, 'r') as f:
+            line = f.readline()
+        return eval(line.split(',')[1])

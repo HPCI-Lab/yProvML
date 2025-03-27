@@ -243,6 +243,7 @@ def save_metric_from_file(
         'prov-ml:metric_value_list': Prov4MLAttribute.get_attr(array2string(values, separator=', ', max_line_width=inf)), 
         'prov-ml:metric_timestamp_list': Prov4MLAttribute.get_attr(array2string(timestamps, separator=', ', max_line_width=inf)), 
         'prov-ml:context': Prov4MLAttribute.get_attr(ctx),
+        'prov-ml:artifact_uri': os.path.join(PROV4ML_DATA.METRICS_DIR, metric_file),
     })
 
 def create_prov_document() -> prov.ProvDocument:
