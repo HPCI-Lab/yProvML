@@ -35,7 +35,7 @@ class MetricInfo:
     save_to_file(path : str, process : Optional[int] = None) -> None
         Saves the metric information to a file.
     """
-    def __init__(self, name: str, context: Any, source=LoggingItemKind) -> None:
+    def __init__(self, name: str, context: Any, use_compression: bool, chunk_size: int, source=LoggingItemKind) -> None:
         """
         Initializes the MetricInfo class with the given name, context, and source.
 
@@ -54,6 +54,8 @@ class MetricInfo:
         """
         self.name = name
         self.context = context
+        self.use_compression = use_compression
+        self.chunk_size = chunk_size
         self.source = source
         self.total_metric_values = 0
         self.epochDataList: Dict[int, List[Any]] = {}
@@ -85,7 +87,6 @@ class MetricInfo:
             self, 
             path: str, 
             file_type: MetricsType,
-            use_compression: bool, # Spostarlo quando viene creata la metrica
             process: Optional[int] = None
         ) -> None:
         """
@@ -111,7 +112,7 @@ class MetricInfo:
             file = os.path.join(path, f"{self.name}_{self.context}.{file_type.value}")
 
         if file_type == MetricsType.ZARR:
-            self.save_to_zarr(file, use_compression)
+            self.save_to_zarr(file)
         elif file_type == MetricsType.TXT:
             self.save_to_txt(file)
         elif file_type == MetricsType.NETCDF:
@@ -142,13 +143,14 @@ class MetricInfo:
         else:
             dataset = nc.Dataset(netcdf_file, mode='w', format='NETCDF4')
 
-            # Metadati
+            # Metadata
             dataset._name = self.name
             dataset._context = str(self.context)
             dataset._source = str(self.source)
 
             dataset.createDimension('time', None)
 
+            
             dataset.createVariable('epochs', 'i4', ('time',))
             dataset.createVariable('values', 'f4', ('time',))
             dataset.createVariable('timestamps', 'i8', ('time',))
@@ -174,8 +176,7 @@ class MetricInfo:
 
     def save_to_zarr(
             self,
-            zarr_file: str,
-            use_compression: bool
+            zarr_file: str
         ) -> None:
         """
         Saves the metric information in a zarr file.
@@ -214,14 +215,14 @@ class MetricInfo:
             dataset['values'].append(values)
             dataset['timestamps'].append(timestamps)
         else:
-            if use_compression:
-                dataset.create_dataset('epochs', data=epochs, chunks=(1000,), dtype='i4')
-                dataset.create_dataset('values', data=values, chunks=(1000,), dtype='f4')
-                dataset.create_dataset('timestamps', data=timestamps, chunks=(1000,), dtype='i8')
+            if self.use_compression:
+                dataset.create_dataset('epochs', data=epochs, chunks=(self.chunk_size,), dtype='i4')
+                dataset.create_dataset('values', data=values, chunks=(self.chunk_size,), dtype='f4')
+                dataset.create_dataset('timestamps', data=timestamps, chunks=(self.chunk_size,), dtype='i8')
             else:
-                dataset.create_dataset('epochs', data=epochs, chunks=(1000,), dtype='i4', compressor=None)
-                dataset.create_dataset('values', data=values, chunks=(1000,), dtype='f4', compressor=None)
-                dataset.create_dataset('timestamps', data=timestamps, chunks=(1000,), dtype='i8', compressor=None)
+                dataset.create_dataset('epochs', data=epochs, chunks=(self.chunk_size,), dtype='i4', compressor=None)
+                dataset.create_dataset('values', data=values, chunks=(self.chunk_size,), dtype='f4', compressor=None)
+                dataset.create_dataset('timestamps', data=timestamps, chunks=(self.chunk_size,), dtype='i8', compressor=None)
 
     def save_to_txt(
             self,

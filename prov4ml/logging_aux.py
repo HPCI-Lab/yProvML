@@ -303,3 +303,9 @@ def get_context_from_metric_file(metric_file : str,) -> Context:
         with open(metric_file, 'r') as f:
             line = f.readline()
         return eval(line.split(',')[1])
+    elif PROV4ML_DATA.METRICS_FILE_TYPE == MetricsType.ZARR:
+        dataset = zarr.open(metric_file, mode='r')
+        return eval(dataset.attrs['context'])
+    elif PROV4ML_DATA.METRICS_FILE_TYPE == MetricsType.NETCDF:
+        dataset = nc.Dataset(metric_file, mode='r')
+        return eval(dataset._context)

@@ -105,6 +105,7 @@ class Prov4MLData:
         self.RUN_ID = 0
         self.METRICS_FILE_TYPE: MetricsType = MetricsType.ZARR
         self.use_compression: bool = True
+        self.chunk_size: int = 1000
 
         self.global_rank = None
         self.is_collecting = False
@@ -120,7 +121,8 @@ class Prov4MLData:
             save_after_n_logs: int = 100, 
             rank: Optional[int] = None,
             metrics_file_type: MetricsType = MetricsType.ZARR,
-            use_compression: bool = True
+            use_compression: bool = True,
+            chunk_size: int = 1000
         ) -> None:
         """
         Initializes the experiment with the given parameters and sets up directories and metadata.
@@ -171,6 +173,7 @@ class Prov4MLData:
         self.METRICS_DIR = os.path.join(self.ARTIFACTS_DIR, "metrics")
         self.METRICS_FILE_TYPE = metrics_file_type
         self.use_compression = use_compression
+        self.chunk_size = chunk_size
 
     def add_metric(
         self, 
@@ -206,7 +209,7 @@ class Prov4MLData:
         if not self.is_collecting: return
 
         if (metric, context) not in self.metrics:
-            self.metrics[(metric, context)] = MetricInfo(metric, context, source=source)
+            self.metrics[(metric, context)] = MetricInfo(metric, context, self.use_compression, self.chunk_size, source=source)
         
         self.metrics[(metric, context)].add_metric(value, step, timestamp if timestamp else funcs.get_current_time_millis())
 
@@ -332,7 +335,7 @@ class Prov4MLData:
         if not os.path.exists(self.METRICS_DIR):
             os.makedirs(self.METRICS_DIR, exist_ok=True)
 
-        metric.save_to_file(self.METRICS_DIR, file_type=self.METRICS_FILE_TYPE, use_compression=self.use_compression, process=self.global_rank)
+        metric.save_to_file(self.METRICS_DIR, file_type=self.METRICS_FILE_TYPE, process=self.global_rank)
 
     def save_all_metrics(self) -> None:
         """
