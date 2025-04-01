@@ -95,9 +95,8 @@ def start_run_ctx(
     PROV4ML_DATA.save_all_metrics()
 
     # add all metrics as artifacts
-    metrics_paths = [os.path.join(PROV4ML_DATA.METRICS_DIR, metric) for metric in os.listdir(PROV4ML_DATA.METRICS_DIR)]
-    for metric_path in metrics_paths:
-        log_artifact(metric_path, get_context_from_metric_file(metric_path))
+    for metric in os.listdir(PROV4ML_DATA.METRICS_DIR):
+        log_artifact(os.path.join(PROV4ML_DATA.METRICS_DIR, metric), get_context_from_metric_file(metric))
 
     doc = create_prov_document()
 
@@ -196,9 +195,8 @@ def end_run(
     PROV4ML_DATA.save_all_metrics()
 
     # add all metrics as artifacts
-    metrics_paths = [os.path.join(PROV4ML_DATA.METRICS_DIR, metric) for metric in os.listdir(PROV4ML_DATA.METRICS_DIR)]
-    for metric_path in metrics_paths:
-        log_artifact(metric_path, get_context_from_metric_file(metric_path))
+    for metric in os.listdir(PROV4ML_DATA.METRICS_DIR):
+        log_artifact(os.path.join(PROV4ML_DATA.METRICS_DIR, metric), get_context_from_metric_file(metric))
 
     doc = create_prov_document()
    
