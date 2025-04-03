@@ -1,5 +1,6 @@
 
 import os
+import numcodecs.abc
 from typing import Any, Dict, List, Optional
 
 from prov4ml.datamodel.artifact_data import ArtifactInfo
@@ -106,6 +107,7 @@ class Prov4MLData:
         self.METRICS_FILE_TYPE: MetricsType = MetricsType.ZARR
         self.use_compression: bool = True
         self.chunk_size: int = 1000
+        self.zarr_compressor: numcodecs.abc.Codec = None
 
         self.global_rank = None
         self.is_collecting = False
@@ -122,7 +124,8 @@ class Prov4MLData:
             rank: Optional[int] = None,
             metrics_file_type: MetricsType = MetricsType.ZARR,
             use_compression: bool = True,
-            chunk_size: int = 1000
+            chunk_size: int = 1000,
+            zarr_compressor: numcodecs.abc.Codec = None
         ) -> None:
         """
         Initializes the experiment with the given parameters and sets up directories and metadata.
@@ -174,6 +177,7 @@ class Prov4MLData:
         self.METRICS_FILE_TYPE = metrics_file_type
         self.use_compression = use_compression
         self.chunk_size = chunk_size
+        self.zarr_compressor = zarr_compressor
 
     def add_metric(
         self, 
@@ -209,7 +213,7 @@ class Prov4MLData:
         if not self.is_collecting: return
 
         if (metric, context) not in self.metrics:
-            self.metrics[(metric, context)] = MetricInfo(metric, context, self.use_compression, self.chunk_size, source=source)
+            self.metrics[(metric, context)] = MetricInfo(metric, context, self.use_compression, self.chunk_size, source=source, zarr_compressor=self.zarr_compressor)
         
         self.metrics[(metric, context)].add_metric(value, step, timestamp if timestamp else funcs.get_current_time_millis())
 
@@ -349,3 +353,57 @@ class Prov4MLData:
 
         for metric in self.metrics.values():
             self.save_metric_to_file(metric)
+
+    def convert_all_metrics_to_zarr(self, convert_use_compression: bool, chunk_size: int, delete_old_metrics: bool, convert_zarr_compressor: Optional[numcodecs.abc.Codec] = None) -> None:
+        """
+        Converts all metrics to Zarr format.
+
+        Parameters:
+        -----------
+            use_compression (bool): Whether to use compression when converting metrics.
+
+        Returns:
+        --------
+        None
+        """
+        if not self.is_collecting: return
+
+        if delete_old_metrics:
+            out_path = self.METRICS_DIR
+        else:
+            out_path = os.path.join(self.EXPERIMENT_DIR, "converted_metrics")
+            os.makedirs(out_path, exist_ok=True)
+
+        for metric in self.metrics.values():
+            metric.convert_to_zarr(in_path=self.METRICS_DIR, out_path=out_path, in_file_type=self.METRICS_FILE_TYPE, use_compression=convert_use_compression,
+                                   chunk_size=chunk_size, delete_old_file=delete_old_metrics, zarr_compressor=convert_zarr_compressor, process=self.global_rank)
+
+        if delete_old_metrics:
+            self.METRICS_FILE_TYPE = MetricsType.ZARR
+
+    def convert_all_metrics_to_netcdf(self, convert_use_compression: bool, delete_old_metrics: bool) -> None:
+        """
+        Converts all metrics to NetCDF format.
+
+        Parameters:
+        -----------
+            use_compression (bool): Whether to use compression when converting metrics.
+
+        Returns:
+        --------
+        None
+        """
+        if not self.is_collecting: return
+
+        if delete_old_metrics:
+            out_path = self.METRICS_DIR
+        else:
+            out_path = os.path.join(self.EXPERIMENT_DIR, "converted_metrics")
+            os.makedirs(out_path, exist_ok=True)
+
+        for metric in self.metrics.values():
+            metric.convert_to_netcdf(in_path=self.METRICS_DIR, out_path=out_path, in_file_type=self.METRICS_FILE_TYPE, convert_use_compression=convert_use_compression,
+                                     delete_old_file=delete_old_metrics, process=self.global_rank)
+
+        if delete_old_metrics:
+            self.METRICS_FILE_TYPE = MetricsType.NETCDF

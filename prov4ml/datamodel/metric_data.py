@@ -1,7 +1,8 @@
 
 import os
 import numpy as np
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+import numcodecs.abc, numcodecs
 from typing import Optional
 import zarr
 import netCDF4 as nc
@@ -35,7 +36,7 @@ class MetricInfo:
     save_to_file(path : str, process : Optional[int] = None) -> None
         Saves the metric information to a file.
     """
-    def __init__(self, name: str, context: Any, use_compression: bool, chunk_size: int, source=LoggingItemKind) -> None:
+    def __init__(self, name: str, context: Any, use_compression: bool, chunk_size: int, source: LoggingItemKind, zarr_compressor: Optional[numcodecs.abc.Codec] = None) -> None:
         """
         Initializes the MetricInfo class with the given name, context, and source.
 
@@ -60,7 +61,12 @@ class MetricInfo:
         self.total_metric_values = 0
         self.epochDataList: Dict[int, List[Any]] = {}
 
-    def add_metric(self, value: Any, epoch: int, timestamp : int) -> None:
+        if zarr_compressor:
+            self.zarr_compressor = zarr_compressor
+        else:
+            self.zarr_compressor = numcodecs.blosc.Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)
+
+    def add_metric(self, value: Any, epoch: int, timestamp: int) -> None:   
         """
         Adds a metric value for a specific epoch to the MetricInfo object.
 
@@ -150,10 +156,14 @@ class MetricInfo:
 
             dataset.createDimension('time', None)
 
-            
-            dataset.createVariable('epochs', 'i4', ('time',))
-            dataset.createVariable('values', 'f4', ('time',))
-            dataset.createVariable('timestamps', 'i8', ('time',))
+            if self.use_compression:
+                dataset.createVariable('epochs', 'i4', ('time',), compression='zlib')
+                dataset.createVariable('values', 'f4', ('time',), compression='zlib')
+                dataset.createVariable('timestamps', 'i8', ('time',), compression='zlib')
+            else:
+                dataset.createVariable('epochs', 'i4', ('time',))
+                dataset.createVariable('values', 'f4', ('time',))
+                dataset.createVariable('timestamps', 'i8', ('time',))
 
         epochs = []
         values = []
@@ -216,13 +226,15 @@ class MetricInfo:
             dataset['timestamps'].append(timestamps)
         else:
             if self.use_compression:
-                dataset.create_dataset('epochs', data=epochs, chunks=(self.chunk_size,), dtype='i4')
-                dataset.create_dataset('values', data=values, chunks=(self.chunk_size,), dtype='f4')
-                dataset.create_dataset('timestamps', data=timestamps, chunks=(self.chunk_size,), dtype='i8')
+                dataset.create_dataset('epochs', data=epochs, chunks=(self.chunk_size,), dtype='i4', compressor=self.zarr_compressor)
+                dataset.create_dataset('values', data=values, chunks=(self.chunk_size,), dtype='f4', compressor=self.zarr_compressor)
+                dataset.create_dataset('timestamps', data=timestamps, chunks=(self.chunk_size,), dtype='i8', compressor=self.zarr_compressor)
             else:
                 dataset.create_dataset('epochs', data=epochs, chunks=(self.chunk_size,), dtype='i4', compressor=None)
                 dataset.create_dataset('values', data=values, chunks=(self.chunk_size,), dtype='f4', compressor=None)
                 dataset.create_dataset('timestamps', data=timestamps, chunks=(self.chunk_size,), dtype='i8', compressor=None)
+
+        dataset.store.close()
 
     def save_to_txt(
             self,
@@ -249,11 +261,15 @@ class MetricInfo:
                 for value, timestamp in values:
                     f.write(f"{epoch}, {value}, {timestamp}\n")
 
-    def copy_to_zarr(
+    def convert_to_zarr(
             self,
-            path: str,
-            file_type: MetricsType,
+            in_path: str,
+            out_path: str,
+            in_file_type: MetricsType,
             use_compression: bool = True,
+            chunk_size: int = 1000,
+            delete_old_file: bool = True,
+            zarr_compressor: Optional[numcodecs.abc.Codec] = None,
             process: Optional[int] = None
         ) -> None:
         """
@@ -261,12 +277,21 @@ class MetricInfo:
 
         Parameters:
         -----------
-        path : str
+        in_path : str
+            The directory path where the file will be read from.
+        out_path : str
             The directory path where the file will be saved.
-        file_type : MetricsType
+        in_file_type : MetricsType
             The type of file to be read.
         use_compression : bool
             Whether to use compression when saving the zarr file. Defaults to True.
+        chunk_size : int
+            The chunk size to be used for the zarr file. Defaults to 1000.
+        delete_old_file : bool
+            Whether to delete the old file after conversion. Defaults to True.
+        zarr_compressor : Optional[numcodecs.abc.Codec], optional
+            The compressor to be used for the zarr file.
+            If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`
         process : Optional[int], optional
             The process identifier to be included in the filename. If not provided, 
             the filename will not include a process identifier.
@@ -276,27 +301,33 @@ class MetricInfo:
         None
         """
         if process is not None:
-            file = os.path.join(path, f"{self.name}_{self.context}_GR{process}.{file_type.value}")
+            file = os.path.join(in_path, f"{self.name}_{self.context}_GR{process}.{in_file_type.value}")
         else:
-            file = os.path.join(path, f"{self.name}_{self.context}.{file_type.value}")
+            file = os.path.join(in_path, f"{self.name}_{self.context}.{in_file_type.value}")
 
-        output_path = os.path.join(path, f"copy_{self.name}_{self.context}_GR{process}.{file_type.value}")
+        output_path = os.path.join(out_path, f"copy_{self.name}_{self.context}_GR{process}.zarr")
         output_file = zarr.open(output_path, mode='w')
 
-        if file_type == MetricsType.ZARR:
+        # Metadata
+        output_file.attrs['name'] = self.name
+        output_file.attrs['context'] = str(self.context)
+        output_file.attrs['source'] = str(self.source)
+
+        if in_file_type == MetricsType.ZARR:
             dataset = zarr.open(file, mode='r')
 
             for name in dataset.array_keys():
                 if use_compression:
-                    output_file.create_dataset(name, data=dataset[name], chunks=dataset[name].chunks, dtype=dataset[name].dtype, shape=dataset[name].shape)
+                    output_file.create_dataset(name, data=dataset[name], chunks=(chunk_size,), dtype=dataset[name].dtype, shape=dataset[name].shape,
+                                               compressor=zarr_compressor if zarr_compressor else numcodecs.blosc.Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0))
                 else:
-                    output_file.create_dataset(name, data=dataset[name], chunks=dataset[name].chunks, dtype=dataset[name].dtype, shape=dataset[name].shape, compressor=None)
+                    output_file.create_dataset(name, data=dataset[name], chunks=(chunk_size,), dtype=dataset[name].dtype, shape=dataset[name].shape, compressor=None)
 
             for key, value in dataset.attrs.items():
                 output_file.attrs[key] = value
 
-        elif file_type == MetricsType.TXT:
-            with open(file, "r") as f:
+        elif in_file_type == MetricsType.TXT:
+            with open(file, 'r') as f:
                 lines = f.readlines()
 
             epochs = []
@@ -313,13 +344,72 @@ class MetricInfo:
             timestamps = np.array(timestamps, dtype='i8')
 
             if use_compression:
-                output_file.create_dataset('epochs', data=epochs, chunks=(100,), dtype='i4')
-                output_file.create_dataset('values', data=values, chunks=(100,), dtype='f4')
-                output_file.create_dataset('timestamps', data=timestamps, chunks=(100,), dtype='i8')
+                output_file.create_dataset('epochs', data=epochs, chunks=(chunk_size,), dtype='i4')
+                output_file.create_dataset('values', data=values, chunks=(chunk_size,), dtype='f4')
+                output_file.create_dataset('timestamps', data=timestamps, chunks=(chunk_size,), dtype='i8')
             else:
-                output_file.create_dataset('epochs', data=epochs, chunks=(100,), dtype='i4', compressor=None)
-                output_file.create_dataset('values', data=values, chunks=(100,), dtype='f4', compressor=None)
-                output_file.create_dataset('timestamps', data=timestamps, chunks=(100,), dtype='i8', compressor=None)
+                output_file.create_dataset('epochs', data=epochs, chunks=(chunk_size,), dtype='i4', compressor=None)
+                output_file.create_dataset('values', data=values, chunks=(chunk_size,), dtype='f4', compressor=None)
+                output_file.create_dataset('timestamps', data=timestamps, chunks=(chunk_size,), dtype='i8', compressor=None)
+
+        elif in_file_type == MetricsType.NETCDF:
+            dataset = nc.Dataset(file, mode='r')
+
+            epochs = np.array(dataset.variables['epochs'][:], dtype='i4')
+            values = np.array(dataset.variables['values'][:], dtype='f4')
+            timestamps = np.array(dataset.variables['timestamps'][:], dtype='i8')
+
+            if use_compression:
+                output_file.create_dataset('epochs', data=epochs, chunks=(chunk_size,), dtype='i4')
+                output_file.create_dataset('values', data=values, chunks=(chunk_size,), dtype='f4')
+                output_file.create_dataset('timestamps', data=timestamps, chunks=(chunk_size,), dtype='i8')
+            else:
+                output_file.create_dataset('epochs', data=epochs, chunks=(chunk_size,), dtype='i4', compressor=None)
+                output_file.create_dataset('values', data=values, chunks=(chunk_size,), dtype='f4', compressor=None)
+                output_file.create_dataset('timestamps', data=timestamps, chunks=(chunk_size,), dtype='i8', compressor=None)
+
+            dataset.close()
 
         else:
-            raise ValueError(f"Unsupported file type: {file_type}")
+            raise ValueError(f"Unsupported file type: {in_file_type}")
+        
+        output_file.store.close()
+
+        os.rename(output_path, os.path.join(out_path, f"{self.name}_{self.context}_GR{process}.zarr"))
+
+        if delete_old_file:
+            os.remove(file)
+        
+    def convert_to_netcdf(
+            self,
+            in_path: str,
+            out_path: str,
+            in_file_type: MetricsType,
+            use_compression: bool = True,
+            delete_old_file: bool = True,
+            process: Optional[int] = None
+        ) -> None:
+        """
+        Converts the metric information to a netCDF file.
+
+        Parameters:
+        -----------
+        in_path : str
+            The directory path where the file will be read from.
+        out_path : str
+            The directory path where the file will be saved.
+        in_file_type : MetricsType
+            The type of file to be read.
+        use_compression : bool
+            Whether to use compression when saving the netCDF file. Defaults to True.
+        delete_old_file : bool
+            Whether to delete the old file after conversion. Defaults to True.
+        process : Optional[int], optional
+            The process identifier to be included in the filename. If not provided, 
+            the filename will not include a process identifier.
+
+        Returns:
+        --------
+        None
+        """
+        pass

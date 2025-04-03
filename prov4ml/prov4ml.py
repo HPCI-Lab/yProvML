@@ -1,6 +1,7 @@
 import os
 from typing import Optional
 from contextlib import contextmanager
+import numcodecs.abc
 
 from prov4ml.constants import PROV4ML_DATA
 from prov4ml.utils import energy_utils
@@ -18,11 +19,18 @@ def start_run_ctx(
         collect_all_processes: Optional[bool] = False,
         save_after_n_logs: Optional[int] = 100,
         rank : Optional[int] = None, 
-        create_graph: Optional[bool] = False, 
-        create_svg: Optional[bool] = False, 
         metrics_file_type: MetricsType = MetricsType.ZARR,
         use_compression: bool = True,
-        chunk_size: Optional[int] = 1000
+        chunk_size: Optional[int] = 1000,
+        zarr_compressor: Optional[numcodecs.abc.Codec] = None,
+        create_graph: Optional[bool] = False, 
+        create_svg: Optional[bool] = False,
+        convert_metrics_to_zarr: Optional[bool] = False,
+        convert_metrics_to_netcdf: Optional[bool] = False,
+        convert_use_compression: Optional[bool] = True,
+        convert_chunk_size: Optional[int] = 1000,
+        delete_old_metrics: Optional[bool] = True,
+        convert_zarr_compressor: Optional[numcodecs.abc.Codec] = None,
     ): 
     """
     Context manager for starting and ending a run, initializing provenance data collection and optionally creating visualizations.
@@ -79,7 +87,8 @@ def start_run_ctx(
         rank=rank, 
         metrics_file_type=metrics_file_type,
         use_compression=use_compression,
-        chunk_size=chunk_size
+        chunk_size=chunk_size,
+        zarr_compressor=zarr_compressor
     )
    
     energy_utils._carbon_init()
@@ -93,6 +102,12 @@ def start_run_ctx(
 
     # save remaining metrics
     PROV4ML_DATA.save_all_metrics()
+
+    if convert_metrics_to_zarr:
+        PROV4ML_DATA.convert_all_metrics_to_zarr(convert_use_compression=convert_use_compression, chunk_size=convert_chunk_size, delete_old_metrics=delete_old_metrics, convert_zarr_compressor=convert_zarr_compressor)
+
+    if convert_metrics_to_netcdf:
+        PROV4ML_DATA.convert_all_metrics_to_netcdf(use_compression=convert_use_compression, delete_old_metrics=delete_old_metrics)
 
     # add all metrics as artifacts
     for metric in os.listdir(PROV4ML_DATA.METRICS_DIR):
@@ -117,7 +132,8 @@ def start_run(
         rank : Optional[int] = None, 
         metrics_file_type: MetricsType = MetricsType.ZARR,
         use_compression: bool = True,
-        chunk_size: Optional[int] = 1000
+        chunk_size: Optional[int] = 1000,
+        zarr_compressor: Optional[numcodecs.abc.Codec] = None,
     ) -> None:
     """
     Initializes the provenance data collection and sets up various utilities for tracking.
@@ -152,7 +168,8 @@ def start_run(
         rank=rank,
         metrics_file_type=metrics_file_type,
         use_compression=use_compression,
-        chunk_size=chunk_size
+        chunk_size=chunk_size,
+        zarr_compressor=zarr_compressor
     )
 
     energy_utils._carbon_init()
@@ -162,11 +179,17 @@ def start_run(
 
 def end_run(
         create_graph: Optional[bool] = False, 
-        create_svg: Optional[bool] = False, 
+        create_svg: Optional[bool] = False,
+        convert_metrics_to_zarr: Optional[bool] = False,
+        convert_metrics_to_netcdf: Optional[bool] = False,
+        convert_use_compression: Optional[bool] = True,
+        convert_chunk_size: Optional[int] = 1000,
+        delete_old_metrics: Optional[bool] = True,
+        convert_zarr_compressor: Optional[numcodecs.abc.Codec] = None,
     ):  
     """
     Finalizes the provenance data collection and optionally creates visualization and provenance collection files.
-
+    
     Parameters:
     -----------
     create_graph : Optional[bool], optional
@@ -176,6 +199,18 @@ def end_run(
         Must be set to True only if `create_graph` is also True.
     create_provenance_collection : Optional[bool], optional
         Whether to create a collection of provenance data from all runs. Default is False.
+    convert_metrics_to_zarr : Optional[bool], optional
+        Whether to convert metrics to Zarr format. Default is False.
+    convert_metrics_to_netcdf : Optional[bool], optional
+        Whether to convert metrics to NetCDF format. Default is False.
+    convert_use_compression : Optional[bool], optional
+        Whether to use compression when saving metrics. Default is True.
+    convert_chunk_size : Optional[int], optional
+        The size of chunks to use when saving metrics. Default is 1000.
+        Available only when converting to Zarr format.
+    delete_old_metrics : Optional[bool], optional
+        Whether to delete old metrics after conversion. Default is True.
+        Available only if `convert_metrics_to_zarr` or `convert_metrics_to_netcdf` is True.
 
     Raises:
     -------
@@ -186,6 +221,8 @@ def end_run(
     --------
     None
     """
+    if create_svg and not create_graph:
+        raise ValueError("Cannot create SVG without creating the graph.")
 
     if not PROV4ML_DATA.is_collecting: return
     
@@ -193,6 +230,12 @@ def end_run(
 
     # save remaining metrics
     PROV4ML_DATA.save_all_metrics()
+
+    if convert_metrics_to_zarr:
+        PROV4ML_DATA.convert_all_metrics_to_zarr(convert_use_compression=convert_use_compression, chunk_size=convert_chunk_size, delete_old_metrics=delete_old_metrics, convert_zarr_compressor=convert_zarr_compressor)
+
+    if convert_metrics_to_netcdf:
+        PROV4ML_DATA.convert_all_metrics_to_netcdf(convert_use_compression=convert_use_compression, delete_old_metrics=delete_old_metrics)
 
     # add all metrics as artifacts
     for metric in os.listdir(PROV4ML_DATA.METRICS_DIR):
