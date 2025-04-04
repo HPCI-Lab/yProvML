@@ -35,8 +35,8 @@ def start_run_ctx(
     """
     Context manager for starting and ending a run, initializing provenance data collection and optionally creating visualizations.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     prov_user_namespace : str
         The user namespace for organizing provenance data.
     experiment_name : Optional[str], optional
@@ -49,28 +49,52 @@ def start_run_ctx(
         Number of logs after which to save metrics. Default is 100.
     rank : Optional[int], optional
         Rank of the current process in a distributed setting. Defaults to None.
+    metrics_file_type : MetricsType
+        The type of file to save metrics. Defaults to MetricsType.ZARR.
+    use_compression : bool, optional
+        Whether to use compression when saving metrics. Default is True.
+        Available only when `metrics_file_type` is Zarr or NetCDF.
+    chunk_size : Optional[int], optional
+        The size of chunks to use when saving metrics. Default is 1000.
+        Available only when using to Zarr format.
+    zarr_compressor : Optional[numcodecs.abc.Codec], optional
+        The compressor to use for Zarr format. If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
+        See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
     create_graph : Optional[bool], optional
         Whether to create a graph representation of the provenance data. Default is False.
     create_svg : Optional[bool], optional
         Whether to create an SVG file for the graph visualization. Default is False. 
         Must be True only if `create_graph` is also True.
-    create_provenance_collection : Optional[bool], optional
-        Whether to create a collection of provenance data from all runs. Default is False.
-    metrics_file_type : MetricsType
-        The type of file to save metrics. Defaults to MetricsType.ZARR.
+    convert_metrics_to_zarr : Optional[bool], optional
+        Whether to convert metrics to Zarr format at the end of the run. Default is False.
+    convert_metrics_to_netcdf : Optional[bool], optional
+        Whether to convert metrics to NetCDF format at the end of the run. Default is False.
+    convert_use_compression : Optional[bool], optional
+        Whether to use compression when saving metrics during conversion. Default is True.
+    convert_chunk_size : Optional[int], optional
+        The size of chunks to use when saving metrics during conversion. Default is 1000.
+        Available only when converting to Zarr format.
+    delete_old_metrics : Optional[bool], optional
+        Whether to delete old metrics after conversion. Default is True.
+        if False, a new folder will be created with the converted metrics in the root of the experiment.
+        Available only if `convert_metrics_to_zarr` or `convert_metrics_to_netcdf` is True.
+    convert_zarr_compressor : Optional[numcodecs.abc.Codec], optional
+        The compressor to use for Zarr format during conversion.
+        If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
+        See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
 
-    Raises:
-    -------
+    Raises
+    ------
     ValueError
         If `create_svg` is True but `create_graph` is False.
 
-    Yields:
-    -------
+    Yields
+    ------
     None
         The context manager yields control to the block of code within the `with` statement.
 
-    Notes:
-    ------
+    Notes
+    -----
     - The context manager initializes provenance data collection, sets up necessary utilities, and starts tracking.
     - After the block of code within the `with` statement completes, it finalizes the provenance data collection, 
       saves metrics, and optionally generates visualizations and a collection of provenance data.
@@ -138,8 +162,8 @@ def start_run(
     """
     Initializes the provenance data collection and sets up various utilities for tracking.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     prov_user_namespace : str
         The user namespace to be used for organizing provenance data.
     experiment_name : Optional[str], optional
@@ -154,9 +178,17 @@ def start_run(
         The rank of the current process in a distributed setting. If not provided, defaults to None.
     metrics_file_type : MetricsType
         The type of file to save metrics. Defaults to MetricsType.ZARR.
+    use_compression : bool, optional
+        Whether to use compression when saving metrics. Default is True.
+        Available only when `metrics_file_type` is Zarr or NetCDF.
+    chunk_size : Optional[int], optional
+        The size of chunks to use when saving metrics. Default is 1000.
+    zarr_compressor : Optional[numcodecs.abc.Codec], optional
+        The compressor to use for Zarr format. If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
+        See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
 
-    Returns:
-    --------
+    Returns
+    -------
     None
     """
     PROV4ML_DATA.init(
@@ -190,15 +222,13 @@ def end_run(
     """
     Finalizes the provenance data collection and optionally creates visualization and provenance collection files.
     
-    Parameters:
-    -----------
+    Parameters
+    ----------
     create_graph : Optional[bool], optional
         Whether to create a graph representation of the provenance data. Default is False.
     create_svg : Optional[bool], optional
         Whether to create an SVG file for the graph visualization. Default is False. 
         Must be set to True only if `create_graph` is also True.
-    create_provenance_collection : Optional[bool], optional
-        Whether to create a collection of provenance data from all runs. Default is False.
     convert_metrics_to_zarr : Optional[bool], optional
         Whether to convert metrics to Zarr format. Default is False.
     convert_metrics_to_netcdf : Optional[bool], optional
@@ -210,15 +240,20 @@ def end_run(
         Available only when converting to Zarr format.
     delete_old_metrics : Optional[bool], optional
         Whether to delete old metrics after conversion. Default is True.
+        if False, a new folder will be created with the converted metrics in the root of the experiment.
         Available only if `convert_metrics_to_zarr` or `convert_metrics_to_netcdf` is True.
+    convert_zarr_compressor : Optional[numcodecs.abc.Codec], optional
+        The compressor to use for Zarr format during conversion.
+        If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
+        See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
 
-    Raises:
-    -------
+    Raises
+    ------
     ValueError
         If `create_svg` is True but `create_graph` is False.
 
-    Returns:
-    --------
+    Returns
+    -------
     None
     """
     if create_svg and not create_graph:

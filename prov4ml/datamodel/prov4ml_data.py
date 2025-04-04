@@ -16,8 +16,8 @@ class Prov4MLData:
     """
     A class for managing and storing provenance information for machine learning experiments.
 
-    Attributes:
-    -----------
+    Attributes
+    ----------
     metrics : dict
         A dictionary mapping tuples of (str, Context) to MetricInfo objects, 
         representing the metrics tracked during the experiment.
@@ -46,6 +46,12 @@ class Prov4MLData:
         The identifier for the current run of the experiment.
     METRICS_FILE_TYPE : MetricsType
         The file type used to store metrics.
+    use_compression : bool
+        A flag indicating whether to use compression when saving metrics.
+    chunk_size : int
+        The size of the chunks used for saving metrics in Zarr format.
+    zarr_compressor : numcodecs.abc.Codec
+        The compressor used for Zarr format.
     global_rank : optional
         The global rank of the current process in a distributed setting.
     is_collecting : bool
@@ -53,17 +59,19 @@ class Prov4MLData:
     save_metrics_after_n_logs : int
         The number of logs after which metrics are saved.
 
-    Methods:
-    --------
+    Methods
+    -------
     __init__() -> None
         Initializes the Prov4MLData class with default values.
 
     init(experiment_name: str, prov_save_path: Optional[str] = None, user_namespace: Optional[str] = None, 
-         collect_all_processes: bool = False, save_after_n_logs: int = 100, rank: Optional[int] = None) -> None
-        Initializes the experiment with the given parameters and sets up directories and metadata.
+         collect_all_processes: bool = False, save_after_n_logs: int = 100, rank: Optional[int] = None,
+         metrics_file_type: MetricsType = MetricsType.ZARR, use_compression: bool = True,
+         chunk_size: int = 1000, zarr_compressor: numcodecs.abc.Codec = None) -> None
+         Initializes the experiment with the given parameters and sets up directories and metadata.
 
     add_metric(metric: str, value: Any, step: int, context: Optional[Any] = None, source: LoggingItemKind = None,
-                timestamp = None) -> None
+               timestamp = None) -> None
         Adds a metric to the provenance data.
 
     add_cumulative_metric(label: str, value: Any, fold_operation: FoldOperation) -> None
@@ -73,7 +81,7 @@ class Prov4MLData:
         Adds a parameter to the provenance data.
 
     add_artifact(artifact_name: str, value: Any = None, step: Optional[int] = None, context: Optional[Any] = None,
-                timestamp: Optional[int] = None) -> None
+                 timestamp: Optional[int] = None) -> None
         Adds an artifact to the artifacts dictionary.
 
     get_artifacts() -> List[ArtifactInfo]
@@ -90,6 +98,13 @@ class Prov4MLData:
 
     save_all_metrics() -> None
         Saves all tracked metrics to temporary files.
+
+    convert_all_metrics_to_zarr(convert_use_compression: bool, chunk_size: int, delete_old_metrics: bool,
+                                convert_zarr_compressor: Optional[numcodecs.abc.Codec] = None) -> None:
+        Converts all metrics to Zarr format.
+
+    convert_all_metrics_to_netcdf(convert_use_compression: bool, delete_old_metrics: bool) -> None:
+        Converts all metrics to NetCDF format.
     """
     def __init__(self) -> None:
         self.metrics: Dict[(str, Context), MetricInfo] = {}
@@ -130,8 +145,8 @@ class Prov4MLData:
         """
         Initializes the experiment with the given parameters and sets up directories and metadata.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         experiment_name : str
             The name of the experiment.
         prov_save_path : Optional[str], optional
@@ -146,9 +161,18 @@ class Prov4MLData:
             The rank of the current process in a distributed setting. If not provided, determines the global rank.
         metrics_file_type : MetricsType
             The file type used to store metrics. Default is MetricsType.ZARR.
+        use_compression : bool
+            A flag indicating whether to use compression when saving metrics. Default is True.
+            Available only for Zarr and NetCDF formats.
+        chunk_size : int
+            The size of the chunks used for saving metrics in Zarr format. Default is 1000.
+            Available only for Zarr format.
+        zarr_compressor : numcodecs.abc.Codec, optional
+            The compressor to use for Zarr format. If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
+            See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         self.global_rank = funcs.get_global_rank() if rank is None else rank
@@ -187,12 +211,12 @@ class Prov4MLData:
         context: Optional[Any] = None, 
         source: LoggingItemKind = None, 
         timestamp = None
-    ) -> None:
+        ) -> None:
         """
         Adds a metric to the provenance data.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         metric : str
             The name of the metric to add.
         value : Any
@@ -206,8 +230,8 @@ class Prov4MLData:
         timestamp : optional
             The timestamp when the metric is recorded. If not provided, the current time in milliseconds is used.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """        
         if not self.is_collecting: return
@@ -228,8 +252,8 @@ class Prov4MLData:
         """
         Adds a cumulative metric to the provenance data.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         label : str
             The label of the cumulative metric.
         value : Any
@@ -237,8 +261,8 @@ class Prov4MLData:
         fold_operation : FoldOperation
             The operation used to fold new values into the cumulative metric.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         if not self.is_collecting: return
@@ -249,15 +273,15 @@ class Prov4MLData:
         """
         Adds a parameter to the provenance data.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         parameter : str
             The name of the parameter to add.
         value : Any
             The value of the parameter to add.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         if not self.is_collecting: return
@@ -271,16 +295,26 @@ class Prov4MLData:
         step: Optional[int] = None, 
         context: Optional[Any] = None, 
         timestamp: Optional[int] = None
-    ) -> None:
+        ) -> None:
         """
         Adds an artifact to the artifacts dictionary.
 
-        Parameters:
-            artifact_name (str): The name of the artifact.
-            value (Any): The value of the artifact. Defaults to None.
-            step (Optional[int]): The step number for the artifact. Defaults to None.
-            context (Optional[Any]): The context of the artifact. Defaults to None.
-            timestamp (Optional[int]): The timestamp of the artifact. Defaults to None.
+        Parameters
+        ----------
+        artifact_name : str
+            The name of the artifact.
+        value : Any
+            The value of the artifact. Defaults to None.
+        step : Optional[int]
+            The step number for the artifact. Defaults to None.
+        context : Optional[Any]
+            The context of the artifact. Defaults to None.
+        timestamp : optional[int]
+            The timestamp of the artifact. Defaults to None.
+        
+        Returns
+        -------
+        None
         """
         if not self.is_collecting: return
 
@@ -290,8 +324,10 @@ class Prov4MLData:
         """
         Returns a list of all artifacts.
 
-        Returns:
-            List[ArtifactInfo]: A list of artifact information objects.
+        Returns
+        -------
+        List[ArtifactInfo]
+            A list of artifact information objects.
         """
         if not self.is_collecting: return
 
@@ -301,8 +337,10 @@ class Prov4MLData:
         """
         Returns a list of all model version artifacts.
 
-        Returns:
-            List[ArtifactInfo]: A list of model version artifact information objects.
+        Returns
+        -------
+        List[ArtifactInfo]
+            A list of model version artifact information objects.
         """
         if not self.is_collecting: return
 
@@ -312,8 +350,10 @@ class Prov4MLData:
         """
         Returns the most recent model version artifact.
 
-        Returns:
-            Optional[ArtifactInfo]: The most recent model version artifact information object, or None if no model versions exist.
+        Returns
+        -------
+        Optional[ArtifactInfo]
+            The most recent model version artifact information object, or None if no model versions exist.
         """
         if not self.is_collecting: return
 
@@ -326,12 +366,12 @@ class Prov4MLData:
         """
         Saves a metric to a temporary file.
 
-        Parameters:
-        --------
+        Parameters
+        ----------
             metric (MetricInfo): The metric to save.
         
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         if not self.is_collecting: return
@@ -345,8 +385,8 @@ class Prov4MLData:
         """
         Saves all tracked metrics to temporary files.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         if not self.is_collecting: return
@@ -354,16 +394,26 @@ class Prov4MLData:
         for metric in self.metrics.values():
             self.save_metric_to_file(metric)
 
-    def convert_all_metrics_to_zarr(self, convert_use_compression: bool, chunk_size: int, delete_old_metrics: bool, convert_zarr_compressor: Optional[numcodecs.abc.Codec] = None) -> None:
+    def convert_all_metrics_to_zarr(self, convert_use_compression: bool, chunk_size: int, delete_old_metrics: bool = True, convert_zarr_compressor: Optional[numcodecs.abc.Codec] = None) -> None:
         """
         Converts all metrics to Zarr format.
 
-        Parameters:
-        -----------
-            use_compression (bool): Whether to use compression when converting metrics.
+        Parameters
+        ----------
+        convert_use_compression : bool
+            A flag indicating whether to use compression when converting metrics.
+        chunk_size : int
+            The size of the chunks used for saving metrics in Zarr format.
+        delete_old_metrics : bool
+            A flag indicating whether to delete the old metrics files after conversion, defaults to True.
+            if False, a new folder will be created with the converted metrics in the root of the experiment.
+        convert_zarr_compressor : Optional[numcodecs.abc.Codec], optional
+            The compressor to use for Zarr format during conversion.
+            If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
+            See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         if not self.is_collecting: return
@@ -381,16 +431,20 @@ class Prov4MLData:
         if delete_old_metrics:
             self.METRICS_FILE_TYPE = MetricsType.ZARR
 
-    def convert_all_metrics_to_netcdf(self, convert_use_compression: bool, delete_old_metrics: bool) -> None:
+    def convert_all_metrics_to_netcdf(self, convert_use_compression: bool, delete_old_metrics: bool = True) -> None:
         """
         Converts all metrics to NetCDF format.
 
-        Parameters:
-        -----------
-            use_compression (bool): Whether to use compression when converting metrics.
+        Parameters
+        ----------
+        convert_use_compression : bool
+            A flag indicating whether to use compression when converting metrics.
+        delete_old_metrics : bool
+            A flag indicating whether to delete the old metrics files after conversion, defaults to True.
+            if False, a new folder will be created with the converted metrics in the root of the experiment.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         if not self.is_collecting: return

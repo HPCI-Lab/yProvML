@@ -14,43 +14,82 @@ class MetricInfo:
     """
     A class to store information about a specific metric.
 
-    Attributes:
-    -----------
+    Attributes
+    ----------
     name : str
         The name of the metric.
     context : Any
         The context in which the metric is recorded.
+    use_compression : bool
+        Whether to use compression when saving the metric data.
+    chunk_size : int
+        The size of the chunks to be used when saving the data.
+        Available only for Zarr format.
     source : LoggingItemKind
         The source of the logging item.
     total_metric_values : int
         The total number of metric values recorded.
     epochDataList : dict
         A dictionary mapping epoch numbers to lists of metric values recorded in those epochs.
+    zarr_compressor : Optional[numcodecs.abc.Codec]
+        The compressor to be used for Zarr format.
+        If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
+        See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
 
-    Methods:
-    --------
-    __init__(name: str, context: Any, source=LoggingItemKind) -> None
+    Methods
+    -------
+    __init__(name: str, context: Any, use_compression: bool, chunk_size: int, source: LoggingItemKind,
+             zarr_compressor: Optional[numcodecs.abc.Codec] = None) -> None
         Initializes the MetricInfo class with the given name, context, and source.
-    add_metric(value: Any, epoch: int, timestamp : int) -> None
+
+    add_metric(value: Any, epoch: int, timestamp: int) -> None
         Adds a metric value for a specific epoch to the MetricInfo object.
-    save_to_file(path : str, process : Optional[int] = None) -> None
+
+    save_to_file(path: str, file_type: MetricsType, process: Optional[int] = None) -> None
         Saves the metric information to a file.
+
+    save_to_netCDF(netcdf_file: str) -> None
+        Saves the metric information in a netCDF file.
+    
+    save_to_zarr(zarr_file: str) -> None
+        Saves the metric information in a zarr file.
+
+    save_to_txt(txt_file: str) -> None
+        Saves the metric information in a text file.
+
+    convert_to_zarr(in_path: str, out_path: str, in_file_type: MetricsType, use_compression: bool = True,
+                    chunk_size: int = 1000, delete_old_file: bool = True, zarr_compressor: Optional[numcodecs.abc.Codec] = None,
+                    process: Optional[int] = None
+        Copies the metric to a zarr file.
+
+    convert_to_netcdf(in_path: str, out_path: str, in_file_type: MetricsType, use_compression: bool = True,
+                    delete_old_file: bool = True, process: Optional[int] = None) -> None
+        Converts the metric information to a netCDF file.
     """
     def __init__(self, name: str, context: Any, use_compression: bool, chunk_size: int, source: LoggingItemKind, zarr_compressor: Optional[numcodecs.abc.Codec] = None) -> None:
         """
         Initializes the MetricInfo class with the given name, context, and source.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         name : str
             The name of the metric.
         context : Any
             The context in which the metric is recorded.
+        use_compression : bool
+            Whether to use compression when saving the metric data.
+            Available only for Zarr and netCDF formats.
+        chunk_size : int
+            The size of the chunks to be used when saving the data.
+            Available only for Zarr format.
         source : LoggingItemKind
             The source of the logging item.
+        zarr_compressor : Optional[numcodecs.abc.Codec], optional
+            The compressor to be used for Zarr format. if not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
+            See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         self.name = name
@@ -70,8 +109,8 @@ class MetricInfo:
         """
         Adds a metric value for a specific epoch to the MetricInfo object.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         value : Any
             The value of the metric to be added.
         epoch : int
@@ -79,8 +118,8 @@ class MetricInfo:
         timestamp : int
             The timestamp when the metric value was recorded.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         if epoch not in self.epochDataList:
@@ -98,8 +137,8 @@ class MetricInfo:
         """
         Saves the metric information to a file.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         path : str
             The directory path where the file will be saved.
         file_type : str
@@ -108,8 +147,8 @@ class MetricInfo:
             The process identifier to be included in the filename. If not provided, 
             the filename will not include a process identifier.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         if process is not None:
@@ -135,13 +174,13 @@ class MetricInfo:
         """
         Saves the metric information in a netCDF file.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         netcdf_file : str
             The path to the netCDF file where the metric information will be saved.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         if os.path.exists(netcdf_file):
@@ -191,13 +230,13 @@ class MetricInfo:
         """
         Saves the metric information in a zarr file.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         zarr_file : str
             The path to the zarr file where the metric information will be saved.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         if os.path.exists(zarr_file):
@@ -243,13 +282,13 @@ class MetricInfo:
         """
         Saves the metric information in a text file.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         txt_file : str
             The path to the text file where the metric information will be saved.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         file_exists = os.path.exists(txt_file)
@@ -275,8 +314,8 @@ class MetricInfo:
         """
         Copies the metric to a zarr file.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         in_path : str
             The directory path where the file will be read from.
         out_path : str
@@ -291,13 +330,14 @@ class MetricInfo:
             Whether to delete the old file after conversion. Defaults to True.
         zarr_compressor : Optional[numcodecs.abc.Codec], optional
             The compressor to be used for the zarr file.
-            If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`
+            If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
+            See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
         process : Optional[int], optional
             The process identifier to be included in the filename. If not provided, 
             the filename will not include a process identifier.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         if process is not None:
@@ -392,8 +432,8 @@ class MetricInfo:
         """
         Converts the metric information to a netCDF file.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         in_path : str
             The directory path where the file will be read from.
         out_path : str
@@ -408,8 +448,8 @@ class MetricInfo:
             The process identifier to be included in the filename. If not provided, 
             the filename will not include a process identifier.
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         pass

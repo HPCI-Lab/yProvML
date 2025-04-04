@@ -6,6 +6,7 @@ class MetricsType(Enum):
     Attributes:
         TXT (str): Represents text file format.
         ZARR (str): Represents Zarr file format.
+        NETCDF (str): Represents NetCDF file format.
     """
     TXT = 'txt'
     ZARR = 'zarr'
