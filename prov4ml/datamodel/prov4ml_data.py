@@ -62,7 +62,7 @@ class Prov4MLData:
             os.makedirs(self.PROV_SAVE_PATH, exist_ok=True)
         prev_exps = os.listdir(self.PROV_SAVE_PATH) if self.PROV_SAVE_PATH else []
 
-        self.EXPERIMENT_NAME = experiment_name + f"_GR{self.global_rank}" if self.global_rank else experiment_name
+        self.EXPERIMENT_NAME = experiment_name + f"_GR{self.global_rank}" if self.global_rank else experiment_name + f"_GR0"
         self.RUN_ID = len([exp for exp in prev_exps if funcs.prov4ml_experiment_matches(experiment_name, exp)]) 
         self.EXPERIMENT_DIR = os.path.join(self.PROV_SAVE_PATH, experiment_name + f"_{self.RUN_ID}")
         self.ARTIFACTS_DIR = os.path.join(self.EXPERIMENT_DIR, "artifacts")

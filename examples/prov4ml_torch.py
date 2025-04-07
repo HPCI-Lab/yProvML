@@ -12,9 +12,9 @@ import prov4ml
 from prov4ml.wrappers.indexed_dataset import IndexedDatasetWrapper
 
 PATH_DATASETS = "./data"
-BATCH_SIZE = 4
-EPOCHS = 1
-DEVICE = "mps"
+BATCH_SIZE = 16
+EPOCHS = 2
+DEVICE = "cpu"
 
 prov4ml.start_run(
     prov_user_namespace="www.example.org",
@@ -47,16 +47,16 @@ tform = transforms.Compose([
 # log the dataset transformation as one-time parameter
 prov4ml.log_param("dataset transformation", tform)
 
-prov4ml.log_source_code("/Users/gabrielepadovani/Desktop/Università/Prov/ProvML/examples")
+# prov4ml.log_source_code("/Users/gabrielepadovani/Desktop/Università/Prov/ProvML/examples")
 # prov4ml.log_source_code()
 
 train_ds = MNIST(PATH_DATASETS, train=True, download=True, transform=tform)
-train_ds = IndexedDatasetWrapper(Subset(train_ds, range(BATCH_SIZE*200)))
+train_ds = IndexedDatasetWrapper(Subset(train_ds, range(BATCH_SIZE*5)))
 train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
 prov4ml.log_dataset("train_dataset", train_loader)
 
 test_ds = MNIST(PATH_DATASETS, train=False, download=True, transform=tform)
-test_ds = IndexedDatasetWrapper(Subset(test_ds, range(BATCH_SIZE*20)))
+test_ds = IndexedDatasetWrapper(Subset(test_ds, range(BATCH_SIZE*5)))
 test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE)
 prov4ml.log_dataset("val_dataset", test_loader)
 
@@ -103,5 +103,5 @@ prov4ml.log_model("mnist_model_final", mnist_model, log_model_layers=True, is_in
 prov4ml.end_run(
     create_graph=True, 
     create_svg=True, 
-    crate_ro_crate=True
+    # crate_ro_crate=True
 )
