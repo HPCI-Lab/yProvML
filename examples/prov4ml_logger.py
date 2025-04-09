@@ -7,7 +7,7 @@ from torchvision import transforms
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 import sys
-sys.path.append("../ProvML")
+sys.path.append("../yProvML")
 
 import prov4ml
 

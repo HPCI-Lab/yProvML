@@ -6,7 +6,7 @@ from torchvision.datasets import MNIST
 from torchvision import transforms
 from torch.utils.data import DataLoader, Subset
 import sys
-sys.path.append("../ProvML")
+sys.path.append("../yProvML")
 
 import prov4ml
 

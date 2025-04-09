@@ -5,6 +5,19 @@ from torchvision.datasets import CIFAR10
 from torchvision import transforms
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
+import sys
+sys.path.append("../yProvML")
+
+import prov4ml
+
+prov4ml.start_run(
+    prov_user_namespace="www.example.org",
+    experiment_name="experiment_name", 
+    provenance_save_dir="prov",
+    save_after_n_logs=100,
+    collect_all_processes=True, 
+    disable_codecarbon=True
+)
 
 PATH_DATASETS = "./data"
 BATCH_SIZE = 32
@@ -44,10 +57,13 @@ tform = transforms.Compose([
 train_ds = CIFAR10(PATH_DATASETS, train=True, download=True, transform=tform)
 train_ds = Subset(train_ds, range(BATCH_SIZE*200))
 train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE)
+prov4ml.log_dataset("train_loader", train_loader)
+
 
 test_ds = CIFAR10(PATH_DATASETS, train=False, download=True, transform=tform)
 test_ds = Subset(test_ds, range(BATCH_SIZE*100))
 test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE)
+prov4ml.log_dataset("test_loader", test_loader)
 
 optim = torch.optim.Adam(model.parameters(), lr=0.1)
 
@@ -65,6 +81,15 @@ for epoch in range(EPOCHS):
         loss.backward()
         optim.step()
         losses.append(loss.item())
+
+        # log system and carbon metrics (once per epoch), as well as the execution time
+        prov4ml.log_metric("MSE_train", loss.item(), context=prov4ml.Contexts.TRAINING, step=epoch)
+        # prov4ml.log_carbon_metrics(Contexts.TRAINING, step=epoch)
+        prov4ml.log_system_metrics(prov4ml.Contexts.TRAINING, step=epoch)
+    # save incremental model versions
+    prov4ml.save_model_version(f"mnist_model_version", model, prov4ml.Contexts.MODELS, epoch)
+
+
     
 import matplotlib.pyplot as plt
 plt.plot(losses)
@@ -84,8 +109,16 @@ for i, (x, y) in tqdm(enumerate(test_loader)):
     _, predicted = torch.max(y2, 1)
     total_correct += (predicted == y).sum().item() 
     total_samples += y.size(0)
+    prov4ml.log_metric("MSE_val", loss.item(), prov4ml.Contexts.VALIDATION, step=epoch)
+
+prov4ml.log_model("mnist_model_final", model, log_model_layers=True, is_input=False)
             
 avg_loss /= len(test_loader)
 acc = total_correct / total_samples
 
 print(f"Average loss: {avg_loss:.4f}, Accuracy: {acc:.4f}")
+
+prov4ml.end_run(
+    create_graph=True, 
+    create_svg=True, 
+)
