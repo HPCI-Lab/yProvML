@@ -69,7 +69,7 @@ def get_properties_from_file(file : str):
     else: 
         return {
             "name": file,
-            "encodingFormat": f"{file.split(".")[-1]}",
+            "encodingFormat": f"{file.split('.')[-1]}",
         }
 
 def create_rocrate_in_dir(directory): 

@@ -5,8 +5,8 @@ from torchvision.datasets import MNIST
 from torchvision import transforms
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
-import sys
-sys.path.append("../yProvML")
+# import sys
+# sys.path.append("../yProvML")
 
 import prov4ml
 from prov4ml.wrappers.indexed_dataset import IndexedDatasetWrapper
@@ -103,5 +103,5 @@ prov4ml.log_model("mnist_model_final", mnist_model, log_model_layers=True, is_in
 prov4ml.end_run(
     create_graph=True, 
     create_svg=True, 
-    # crate_ro_crate=True
+    crate_ro_crate=True
 )
