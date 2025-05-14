@@ -5,8 +5,8 @@ from torchvision.datasets import MNIST
 from torchvision import transforms
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
-# import sys
-# sys.path.append("../yProvML")
+import sys
+sys.path.append("../yProvML")
 
 import prov4ml
 from prov4ml.wrappers.indexed_dataset import IndexedDatasetWrapper
@@ -24,6 +24,9 @@ prov4ml.start_run(
     collect_all_processes=True, 
     disable_codecarbon=True
 )
+
+prov4ml.create_context("TRAINING_LOD2", prov4ml.Contexts.TRAINING)
+prov4ml.create_context("TRAINING_LOD3", prov4ml.Contexts.TRAINING_LOD2)
 
 class MNISTModel(nn.Module):
     def __init__(self):
@@ -64,7 +67,7 @@ optim = torch.optim.Adam(mnist_model.parameters(), lr=0.001)
 prov4ml.log_param("optimizer", "Adam")
 
 loss_fn = nn.MSELoss().to(DEVICE)
-prov4ml.log_param("loss_fn", "MSELoss")
+prov4ml.log_param("loss_fn", "MSELoss", prov4ml.Contexts.TRAINING_LOD2)
 
 losses = []
 for epoch in range(EPOCHS):
@@ -80,8 +83,8 @@ for epoch in range(EPOCHS):
         losses.append(loss.item())
     
         # log system and carbon metrics (once per epoch), as well as the execution time
-        prov4ml.log_metric("MSE_train", loss.item(), context=prov4ml.Contexts.TRAINING, step=epoch)
-        prov4ml.log_metric("Indices", indices.tolist(), context=prov4ml.Contexts.TRAINING, step=epoch)
+        prov4ml.log_metric("MSE", loss.item(), context=prov4ml.Contexts.TRAINING, step=epoch)
+        prov4ml.log_metric("Indices", indices.tolist(), context=prov4ml.Contexts.TRAINING_LOD2, step=epoch)
         # prov4ml.log_carbon_metrics(Contexts.TRAINING, step=epoch)
         prov4ml.log_system_metrics(prov4ml.Contexts.TRAINING, step=epoch)
     # save incremental model versions
@@ -95,8 +98,8 @@ for epoch in range(EPOCHS):
         y2 = F.one_hot(y, 10).float()
         loss = loss_fn(y_hat, y2)
 
-        prov4ml.log_metric("MSE_val", loss.item(), prov4ml.Contexts.VALIDATION, step=epoch)
-        prov4ml.log_metric("Indices", indices, context=prov4ml.Contexts.TRAINING, step=epoch)
+        prov4ml.log_metric("MSE", loss.item(), prov4ml.Contexts.VALIDATION, step=epoch)
+        prov4ml.log_metric("Indices", indices, context=prov4ml.Contexts.TRAINING_LOD2, step=epoch)
 
 prov4ml.log_model("mnist_model_final", mnist_model, log_model_layers=True, is_input=False)
 
