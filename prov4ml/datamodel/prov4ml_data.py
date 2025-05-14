@@ -1,6 +1,6 @@
 
 import os
-import numcodecs.abc
+import zarr.codecs
 from typing import Any, Dict, List, Optional
 
 from prov4ml.datamodel.artifact_data import ArtifactInfo
@@ -50,7 +50,7 @@ class Prov4MLData:
         A flag indicating whether to use compression when saving metrics.
     chunk_size : int
         The size of the chunks used for saving metrics in Zarr format.
-    zarr_compressor : numcodecs.abc.Codec
+    zarr_compressor : zarr.codecs.BytesCodec
         The compressor used for Zarr format.
     global_rank : optional
         The global rank of the current process in a distributed setting.
@@ -67,7 +67,7 @@ class Prov4MLData:
     init(experiment_name: str, prov_save_path: Optional[str] = None, user_namespace: Optional[str] = None, 
          collect_all_processes: bool = False, save_after_n_logs: int = 100, rank: Optional[int] = None,
          metrics_file_type: MetricsType = MetricsType.ZARR, use_compression: bool = True,
-         chunk_size: int = 1000, zarr_compressor: numcodecs.abc.Codec = None) -> None
+         chunk_size: int = 1000, zarr_compressor: zarr.codecs.BytesCodec = None) -> None
          Initializes the experiment with the given parameters and sets up directories and metadata.
 
     add_metric(metric: str, value: Any, step: int, context: Optional[Any] = None, source: LoggingItemKind = None,
@@ -100,7 +100,7 @@ class Prov4MLData:
         Saves all tracked metrics to temporary files.
 
     convert_all_metrics_to_zarr(convert_use_compression: bool, chunk_size: int, delete_old_metrics: bool,
-                                convert_zarr_compressor: Optional[numcodecs.abc.Codec] = None) -> None:
+                                convert_zarr_compressor: Optional[zarr.codecs.BytesCodec] = None) -> None:
         Converts all metrics to Zarr format.
 
     convert_all_metrics_to_netcdf(convert_use_compression: bool, delete_old_metrics: bool) -> None:
@@ -122,7 +122,7 @@ class Prov4MLData:
         self.METRICS_FILE_TYPE: MetricsType = MetricsType.ZARR
         self.use_compression: bool = True
         self.chunk_size: int = 1000
-        self.zarr_compressor: numcodecs.abc.Codec = None
+        self.zarr_compressor: zarr.codecs.BytesCodec = None
 
         self.global_rank = None
         self.is_collecting = False
@@ -140,7 +140,7 @@ class Prov4MLData:
             metrics_file_type: MetricsType = MetricsType.ZARR,
             use_compression: bool = True,
             chunk_size: int = 1000,
-            zarr_compressor: numcodecs.abc.Codec = None
+            zarr_compressor: zarr.codecs.BytesCodec = None
         ) -> None:
         """
         Initializes the experiment with the given parameters and sets up directories and metadata.
@@ -167,9 +167,9 @@ class Prov4MLData:
         chunk_size : int
             The size of the chunks used for saving metrics in Zarr format. Default is 1000.
             Available only for Zarr format.
-        zarr_compressor : numcodecs.abc.Codec, optional
-            The compressor to use for Zarr format. If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
-            See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
+        zarr_compressor : zarr.codecs.BytesCodec, optional
+            The compressor to use for Zarr format. If not provided, defaults to `zarr.codecs.BloscCodec(cname='zstd')`.
+            See https://numcodecs.readthedocs.io/en/stable/zarr3.html or https://zarr.readthedocs.io/en/stable/api/zarr/codecs/index.html for all available compressors.
 
         Returns
         -------
@@ -394,7 +394,7 @@ class Prov4MLData:
         for metric in self.metrics.values():
             self.save_metric_to_file(metric)
 
-    def convert_all_metrics_to_zarr(self, convert_use_compression: bool, chunk_size: int, delete_old_metrics: bool = True, convert_zarr_compressor: Optional[numcodecs.abc.Codec] = None) -> None:
+    def convert_all_metrics_to_zarr(self, convert_use_compression: bool, chunk_size: int, delete_old_metrics: bool = True, convert_zarr_compressor: Optional[zarr.codecs.BytesCodec] = None) -> None:
         """
         Converts all metrics to Zarr format.
 
@@ -407,10 +407,10 @@ class Prov4MLData:
         delete_old_metrics : bool
             A flag indicating whether to delete the old metrics files after conversion, defaults to True.
             if False, a new folder will be created with the converted metrics in the root of the experiment.
-        convert_zarr_compressor : Optional[numcodecs.abc.Codec], optional
+        convert_zarr_compressor : Optional[zarr.codecs.BytesCodec], optional
             The compressor to use for Zarr format during conversion.
-            If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
-            See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
+            If not provided, defaults to `zarr.codecs.BloscCodec(cname='zstd')`.
+            See https://numcodecs.readthedocs.io/en/stable/zarr3.html or https://zarr.readthedocs.io/en/stable/api/zarr/codecs/index.html for all available compressors.
 
         Returns
         -------

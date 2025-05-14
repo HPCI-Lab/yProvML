@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 from contextlib import contextmanager
-import numcodecs.abc
+import zarr.codecs
 
 from prov4ml.constants import PROV4ML_DATA
 from prov4ml.utils import energy_utils
@@ -22,7 +22,7 @@ def start_run_ctx(
         metrics_file_type: MetricsType = MetricsType.ZARR,
         use_compression: bool = True,
         chunk_size: Optional[int] = 1000,
-        zarr_compressor: Optional[numcodecs.abc.Codec] = None,
+        zarr_compressor: Optional[zarr.codecs.BytesCodec] = None,
         create_graph: Optional[bool] = False, 
         create_svg: Optional[bool] = False,
         convert_metrics_to_zarr: Optional[bool] = False,
@@ -30,7 +30,7 @@ def start_run_ctx(
         convert_use_compression: Optional[bool] = True,
         convert_chunk_size: Optional[int] = 1000,
         delete_old_metrics: Optional[bool] = True,
-        convert_zarr_compressor: Optional[numcodecs.abc.Codec] = None,
+        convert_zarr_compressor: Optional[zarr.codecs.BytesCodec] = None,
     ): 
     """
     Context manager for starting and ending a run, initializing provenance data collection and optionally creating visualizations.
@@ -57,9 +57,9 @@ def start_run_ctx(
     chunk_size : Optional[int], optional
         The size of chunks to use when saving metrics. Default is 1000.
         Available only when using to Zarr format.
-    zarr_compressor : Optional[numcodecs.abc.Codec], optional
-        The compressor to use for Zarr format. If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
-        See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
+    zarr_compressor : Optional[zarr.codecs.BytesCodec], optional
+        The compressor to use for Zarr format. If not provided, defaults to `zarr.codecs.BloscCodec(cname='zstd')`.
+        See https://numcodecs.readthedocs.io/en/stable/zarr3.html or https://zarr.readthedocs.io/en/stable/api/zarr/codecs/index.html for all available compressors.
     create_graph : Optional[bool], optional
         Whether to create a graph representation of the provenance data. Default is False.
     create_svg : Optional[bool], optional
@@ -78,10 +78,10 @@ def start_run_ctx(
         Whether to delete old metrics after conversion. Default is True.
         if False, a new folder will be created with the converted metrics in the root of the experiment.
         Available only if `convert_metrics_to_zarr` or `convert_metrics_to_netcdf` is True.
-    convert_zarr_compressor : Optional[numcodecs.abc.Codec], optional
+    convert_zarr_compressor : Optional[zarr.codecs.BytesCodec], optional
         The compressor to use for Zarr format during conversion.
-        If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
-        See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
+        If not provided, defaults to `zarr.codecs.BloscCodec(cname='zstd')`.
+        See https://numcodecs.readthedocs.io/en/stable/zarr3.html or https://zarr.readthedocs.io/en/stable/api/zarr/codecs/index.html for all available compressors.
 
     Raises
     ------
@@ -157,7 +157,7 @@ def start_run(
         metrics_file_type: MetricsType = MetricsType.ZARR,
         use_compression: bool = True,
         chunk_size: Optional[int] = 1000,
-        zarr_compressor: Optional[numcodecs.abc.Codec] = None,
+        zarr_compressor: Optional[zarr.codecs.BytesCodec] = None,
     ) -> None:
     """
     Initializes the provenance data collection and sets up various utilities for tracking.
@@ -183,9 +183,9 @@ def start_run(
         Available only when `metrics_file_type` is Zarr or NetCDF.
     chunk_size : Optional[int], optional
         The size of chunks to use when saving metrics. Default is 1000.
-    zarr_compressor : Optional[numcodecs.abc.Codec], optional
-        The compressor to use for Zarr format. If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
-        See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
+    zarr_compressor : Optional[zarr.codecs.BytesCodec], optional
+        The compressor to use for Zarr format. If not provided, defaults to `zarr.codecs.BloscCodec(cname='zstd')`.
+        See https://numcodecs.readthedocs.io/en/stable/zarr3.html or https://zarr.readthedocs.io/en/stable/api/zarr/codecs/index.html for all available compressors.
 
     Returns
     -------
@@ -217,7 +217,7 @@ def end_run(
         convert_use_compression: Optional[bool] = True,
         convert_chunk_size: Optional[int] = 1000,
         delete_old_metrics: Optional[bool] = True,
-        convert_zarr_compressor: Optional[numcodecs.abc.Codec] = None,
+        convert_zarr_compressor: Optional[zarr.codecs.BytesCodec] = None,
     ):  
     """
     Finalizes the provenance data collection and optionally creates visualization and provenance collection files.
@@ -242,10 +242,10 @@ def end_run(
         Whether to delete old metrics after conversion. Default is True.
         if False, a new folder will be created with the converted metrics in the root of the experiment.
         Available only if `convert_metrics_to_zarr` or `convert_metrics_to_netcdf` is True.
-    convert_zarr_compressor : Optional[numcodecs.abc.Codec], optional
+    convert_zarr_compressor : Optional[zarr.codecs.BytesCodec], optional
         The compressor to use for Zarr format during conversion.
-        If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
-        See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
+        If not provided, defaults to `zarr.codecs.BloscCodec(cname='zstd')`.
+        See https://numcodecs.readthedocs.io/en/stable/zarr3.html or https://zarr.readthedocs.io/en/stable/api/zarr/codecs/index.html for all available compressors.
 
     Raises
     ------

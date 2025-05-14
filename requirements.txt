@@ -14,4 +14,4 @@ torch
 torchvision
 tqdm
 typing_extensions
-zarr==2.*
+zarr==3.*

@@ -2,10 +2,10 @@
 import os
 import numpy as np
 from typing import Any, Dict, List, Optional
-import numcodecs.abc, numcodecs
 from typing import Optional
 import zarr
 import netCDF4 as nc
+import zarr.codecs
 
 from prov4ml.datamodel.attribute_type import LoggingItemKind
 from prov4ml.provenance.metrics_type import MetricsType
@@ -31,15 +31,15 @@ class MetricInfo:
         The total number of metric values recorded.
     epochDataList : dict
         A dictionary mapping epoch numbers to lists of metric values recorded in those epochs.
-    zarr_compressor : Optional[numcodecs.abc.Codec]
+    zarr_compressor : Optional[zarr.codecs.BytesCodec]
         The compressor to be used for Zarr format.
-        If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
-        See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
+        If not provided, defaults to `zarr.codecs.BloscCodec(cname='zstd')`.
+        See https://numcodecs.readthedocs.io/en/stable/zarr3.html or https://zarr.readthedocs.io/en/stable/api/zarr/codecs/index.html for all available compressors.
 
     Methods
     -------
     __init__(name: str, context: Any, use_compression: bool, chunk_size: int, source: LoggingItemKind,
-             zarr_compressor: Optional[numcodecs.abc.Codec] = None) -> None
+             zarr_compressor: Optional[zarr.codecs.BytesCodec] = None) -> None
         Initializes the MetricInfo class with the given name, context, and source.
 
     add_metric(value: Any, epoch: int, timestamp: int) -> None
@@ -58,7 +58,7 @@ class MetricInfo:
         Saves the metric information in a text file.
 
     convert_to_zarr(in_path: str, out_path: str, in_file_type: MetricsType, use_compression: bool = True,
-                    chunk_size: int = 1000, delete_old_file: bool = True, zarr_compressor: Optional[numcodecs.abc.Codec] = None,
+                    chunk_size: int = 1000, delete_old_file: bool = True, zarr_compressor: Optional[zarr.codecs.BytesCodec] = None,
                     process: Optional[int] = None
         Copies the metric to a zarr file.
 
@@ -66,7 +66,7 @@ class MetricInfo:
                     delete_old_file: bool = True, process: Optional[int] = None) -> None
         Converts the metric information to a netCDF file.
     """
-    def __init__(self, name: str, context: Any, use_compression: bool, chunk_size: int, source: LoggingItemKind, zarr_compressor: Optional[numcodecs.abc.Codec] = None) -> None:
+    def __init__(self, name: str, context: Any, use_compression: bool, chunk_size: int, source: LoggingItemKind, zarr_compressor: Optional[zarr.codecs.BytesCodec] = None) -> None:
         """
         Initializes the MetricInfo class with the given name, context, and source.
 
@@ -84,9 +84,9 @@ class MetricInfo:
             Available only for Zarr format.
         source : LoggingItemKind
             The source of the logging item.
-        zarr_compressor : Optional[numcodecs.abc.Codec], optional
-            The compressor to be used for Zarr format. if not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
-            See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
+        zarr_compressor : Optional[zarr.codecs.BytesCodec], optional
+            The compressor to be used for Zarr format. if not provided, defaults to `zarr.codecs.BloscCodec(cname='zstd')`.
+            See https://numcodecs.readthedocs.io/en/stable/zarr3.html or https://zarr.readthedocs.io/en/stable/api/zarr/codecs/index.html for all available compressors.
 
         Returns
         -------
@@ -99,11 +99,11 @@ class MetricInfo:
         self.source = source
         self.total_metric_values = 0
         self.epochDataList: Dict[int, List[Any]] = {}
-
+        
         if zarr_compressor:
             self.zarr_compressor = zarr_compressor
         else:
-            self.zarr_compressor = numcodecs.blosc.Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)
+            self.zarr_compressor = zarr.codecs.BloscCodec(cname='zstd')
 
     def add_metric(self, value: Any, epoch: int, timestamp: int) -> None:   
         """
@@ -259,19 +259,19 @@ class MetricInfo:
                 values.append(value)
                 timestamps.append(timestamp)
 
-        if 'epochs' in dataset:
-            dataset['epochs'].append(epochs)
-            dataset['values'].append(values)
-            dataset['timestamps'].append(timestamps)
-        else:
+        if 'epochs' not in dataset:
             if self.use_compression:
-                dataset.create_dataset('epochs', data=epochs, chunks=(self.chunk_size,), dtype='i4', compressor=self.zarr_compressor)
-                dataset.create_dataset('values', data=values, chunks=(self.chunk_size,), dtype='f4', compressor=self.zarr_compressor)
-                dataset.create_dataset('timestamps', data=timestamps, chunks=(self.chunk_size,), dtype='i8', compressor=self.zarr_compressor)
+                dataset.create_array('epochs', shape=(0,), chunks=(self.chunk_size,), dtype='i4', compressors=self.zarr_compressor)
+                dataset.create_array('values', shape=(0,), chunks=(self.chunk_size,), dtype='f4', compressors=self.zarr_compressor)
+                dataset.create_array('timestamps', shape=(0,), chunks=(self.chunk_size,), dtype='i8', compressors=self.zarr_compressor)
             else:
-                dataset.create_dataset('epochs', data=epochs, chunks=(self.chunk_size,), dtype='i4', compressor=None)
-                dataset.create_dataset('values', data=values, chunks=(self.chunk_size,), dtype='f4', compressor=None)
-                dataset.create_dataset('timestamps', data=timestamps, chunks=(self.chunk_size,), dtype='i8', compressor=None)
+                dataset.create_array('epochs', shape=(0,), chunks=(self.chunk_size,), dtype='i4', compressors=None)
+                dataset.create_array('values', shape=(0,), chunks=(self.chunk_size,), dtype='f4', compressors=None)
+                dataset.create_array('timestamps', shape=(0,), chunks=(self.chunk_size,), dtype='i8', compressors=None)
+        
+        dataset['epochs'].append(epochs)
+        dataset['values'].append(values)
+        dataset['timestamps'].append(timestamps)
 
         dataset.store.close()
 
@@ -308,7 +308,7 @@ class MetricInfo:
             use_compression: bool = True,
             chunk_size: int = 1000,
             delete_old_file: bool = True,
-            zarr_compressor: Optional[numcodecs.abc.Codec] = None,
+            zarr_compressor: Optional[zarr.codecs.BytesCodec] = None,
             process: Optional[int] = None
         ) -> None:
         """
@@ -328,10 +328,10 @@ class MetricInfo:
             The chunk size to be used for the zarr file. Defaults to 1000.
         delete_old_file : bool
             Whether to delete the old file after conversion. Defaults to True.
-        zarr_compressor : Optional[numcodecs.abc.Codec], optional
+        zarr_compressor : Optional[zarr.codecs.BytesCodec], optional
             The compressor to be used for the zarr file.
-            If not provided, defaults to `Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0)`.
-            See https://numcodecs.readthedocs.io/en/latest/compression/index.html for all available compressors.
+            If not provided, defaults to `zarr.codecs.BloscCodec(cname='zstd')`.
+            See https://numcodecs.readthedocs.io/en/stable/zarr3.html or https://zarr.readthedocs.io/en/stable/api/zarr/codecs/index.html for all available compressors.
         process : Optional[int], optional
             The process identifier to be included in the filename. If not provided, 
             the filename will not include a process identifier.
@@ -359,7 +359,7 @@ class MetricInfo:
             for name in dataset.array_keys():
                 if use_compression:
                     output_file.create_dataset(name, data=dataset[name], chunks=(chunk_size,), dtype=dataset[name].dtype, shape=dataset[name].shape,
-                                               compressor=zarr_compressor if zarr_compressor else numcodecs.blosc.Blosc(cname='lz4', clevel=5, shuffle=1, blocksize=0))
+                                               compressor=zarr_compressor if zarr_compressor else zarr.codecs.BloscCodec(cname='zstd'))
                 else:
                     output_file.create_dataset(name, data=dataset[name], chunks=(chunk_size,), dtype=dataset[name].dtype, shape=dataset[name].shape, compressor=None)
 

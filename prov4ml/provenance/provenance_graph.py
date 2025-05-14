@@ -144,7 +144,7 @@ def save_metric_from_file(
     )
     """
     if PROV4ML_DATA.METRICS_FILE_TYPE == MetricsType.ZARR:
-        dataset = zarr.open(os.path.join(PROV4ML_DATA.METRICS_DIR, metric_file), 'r')
+        dataset = zarr.open(os.path.join(PROV4ML_DATA.METRICS_DIR, metric_file), mode='r')
         source = eval(dataset.attrs['source'])
 
         if not doc.get_record(f'{name}_{ctx}'):
