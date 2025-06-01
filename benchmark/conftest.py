@@ -6,9 +6,7 @@ import numcodecs
 
 def pytest_report_header(config):
     mem = psutil.virtual_memory()
-    return f"total RAM: {round(mem.total / (1024 ** 3), 2):.2f} GB   |\
-    available: {round(mem.available / (1024 ** 3), 2):.2f}\nzarr {zarr.__version__}   |\
-    netCDF4 {netCDF4.__version__}   |   numcodecs {numcodecs.__version__}"
+    return f"ram -- total: {round(mem.total / (1024 ** 3), 2):.2f} GB, available: {round(mem.available / (1024 ** 3), 2):.2f} GB\nzarr-{zarr.__version__}, netCDF4-{netCDF4.__version__}, numcodecs-{numcodecs.__version__}"
 
 def pytest_benchmark_update_machine_info(config, machine_info):
     # Ram info
