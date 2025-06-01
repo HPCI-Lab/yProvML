@@ -10,10 +10,12 @@ import zarr.codecs
 import numcodecs.zarr3
 import netCDF4
 
-total_size = 100
-chunk_sizes = [50, 100]
+total_size = 100000
+chunk_sizes = [50000, 10000]
+data_distributions = ['uniform', 'normal', 'exponential']
 
-dataset = {}
+dataset = None
+distribution = {}
 current_data_distribution = ''
 
 data_path = {
@@ -22,12 +24,12 @@ data_path = {
     'exponential': os.path.join('data', 'exponential_data.pkl')
 }
 
-def delete_datasets():
+def delete_distribution():
     os.remove(data_path['uniform'])
     os.remove(data_path['normal'])
     os.remove(data_path['exponential'])
 
-def generate_datasets():
+def generate_distribution():
     # Uniform distribution
     data = {
         'epochs': np.random.randint(low=1, high=1000, size=total_size).astype(np.int32),
@@ -52,8 +54,8 @@ def generate_datasets():
     }
     pickle.dump(data, open(data_path['exponential'], 'wb'))
 
-def load_dataset(data_distribution) -> dict:
-    global dataset
+def load_distribution(data_distribution) -> dict:
+    global distribution
     global current_data_distribution
 
     if data_distribution != current_data_distribution:
@@ -61,18 +63,18 @@ def load_dataset(data_distribution) -> dict:
 
         match data_distribution:
             case 'uniform':
-                dataset = pickle.load(open(data_path['uniform'], 'rb'))
+                distribution = pickle.load(open(data_path['uniform'], 'rb'))
 
             case 'normal':
-                dataset = pickle.load(open(data_path['normal'], 'rb'))
+                distribution = pickle.load(open(data_path['normal'], 'rb'))
 
             case 'exponential':
-                dataset = pickle.load(open(data_path['exponential'], 'rb'))
+                distribution = pickle.load(open(data_path['exponential'], 'rb'))
 
-    return dataset
+    return distribution
 
-atexit.register(delete_datasets)
-generate_datasets()
+atexit.register(delete_distribution)
+generate_distribution()
 if os.path.exists('test'):
     shutil.rmtree('test')
 
@@ -100,24 +102,32 @@ netcdf4_compressors = {
 @pytest.mark.benchmark(group="zarr_write_benchmark")
 @pytest.mark.parametrize("chunk_size", chunk_sizes)
 @pytest.mark.parametrize("compressor_name, compressor", zarr_compressors.items(), ids=[name for name in zarr_compressors.keys()])
-@pytest.mark.parametrize("data_distribution", ['uniform', 'normal', 'exponential'])
+@pytest.mark.parametrize("data_distribution", data_distributions)
 def test_zarr_write_benchmark(benchmark, chunk_size, compressor_name, compressor, data_distribution):
+    global dataset
 
-    data = load_dataset(data_distribution)
-
+    data = load_distribution(data_distribution)
     file_name = os.path.join('test', 'write', f'zarr_test_{data_distribution}_{chunk_size}_{compressor_name}.zarr')
-    dataset = zarr.open(file_name, mode='w')
 
-    for key, dtype in [('epochs', np.int32), ('values', np.float32), ('timestamps', np.int32)]:
-        dataset.create_array(
-            name=key,
-            shape=(0,),
-            chunks=(chunk_size,),
-            dtype=dtype,
-            compressors=compressor
-        )
+    def setup():
+        global dataset
+        if os.path.exists(file_name):
+            dataset.store.close()
+            shutil.rmtree(file_name)
+
+        dataset = zarr.open(file_name, mode='w')
+
+        for key, dtype in [('epochs', np.int32), ('values', np.float32), ('timestamps', np.int32)]:
+            dataset.create_array(
+                name=key,
+                shape=(0,),
+                chunks=(chunk_size,),
+                dtype=dtype,
+                compressors=compressor
+            )
 
     def write_data():
+        global dataset
         num_chunks = total_size // chunk_size
         for i in range(num_chunks):
             start = i * chunk_size
@@ -125,7 +135,7 @@ def test_zarr_write_benchmark(benchmark, chunk_size, compressor_name, compressor
             for key in data.keys():
                 dataset[key].append(data[key][start:end])
 
-    benchmark.pedantic(write_data, iterations=1, rounds=5, warmup_rounds=1)
+    benchmark.pedantic(write_data, setup=setup, iterations=1, rounds=5, warmup_rounds=1)
 
     dataset.store.close()
 
@@ -141,20 +151,28 @@ def test_zarr_write_benchmark(benchmark, chunk_size, compressor_name, compressor
 @pytest.mark.benchmark(group="netcdf_write_benchmark")
 @pytest.mark.parametrize("chunk_size", chunk_sizes)
 @pytest.mark.parametrize("compressor_name, compressor", netcdf4_compressors.items(), ids=[name for name in netcdf4_compressors.keys()])
-@pytest.mark.parametrize("data_distribution", ['uniform', 'normal', 'exponential'])
+@pytest.mark.parametrize("data_distribution", data_distributions)
 def test_netcdf_write_benchmark(benchmark, chunk_size, compressor_name, compressor, data_distribution):
+    global dataset
 
-    data = load_dataset(data_distribution)
-
+    data = load_distribution(data_distribution)
     file_name = os.path.join('test', 'write', f'netcdf_test_{data_distribution}_{chunk_size}_{compressor_name}.nc')
-    dataset = netCDF4.Dataset(file_name, 'w')
 
-    dataset.createDimension('time', None)
-    dataset.createVariable('epochs', 'i4', ('time',), compression=compressor, complevel=compression_level)
-    dataset.createVariable('values', 'f4', ('time',), compression=compressor, complevel=compression_level)
-    dataset.createVariable('timestamps', 'i4', ('time',), compression=compressor, complevel=compression_level)
+    def setup():
+        global dataset
+        if os.path.exists(file_name):
+            dataset.close()
+            os.remove(file_name)
+
+        dataset = netCDF4.Dataset(file_name, 'w')
+
+        dataset.createDimension('time', None)
+        dataset.createVariable('epochs', 'i4', ('time',), compression=compressor, complevel=compression_level)
+        dataset.createVariable('values', 'f4', ('time',), compression=compressor, complevel=compression_level)
+        dataset.createVariable('timestamps', 'i4', ('time',), compression=compressor, complevel=compression_level)
 
     def write_data():
+        global dataset
         num_chunks = total_size // chunk_size
         for i in range(num_chunks):
             start = i * chunk_size
@@ -164,7 +182,9 @@ def test_netcdf_write_benchmark(benchmark, chunk_size, compressor_name, compress
             for key in data.keys():
                 dataset.variables[key][current_size:new_size] = data[key][start:end]
 
-    benchmark.pedantic(write_data, iterations=1, rounds=5, warmup_rounds=1)
+    benchmark.pedantic(write_data, setup=setup, iterations=1, rounds=5, warmup_rounds=1)
+
+    dataset.close()
 
     total_size_bytes = os.path.getsize(file_name)
     size_mb = total_size_bytes / (1024 * 1024)
@@ -173,23 +193,33 @@ def test_netcdf_write_benchmark(benchmark, chunk_size, compressor_name, compress
 
 @pytest.mark.benchmark(group="txt_write_benchmark")
 @pytest.mark.parametrize("chunk_size", chunk_sizes)
-@pytest.mark.parametrize("data_distribution", ['uniform', 'normal', 'exponential'])
+@pytest.mark.parametrize("data_distribution", data_distributions)
 def test_txt_write_benchmark(benchmark, chunk_size, data_distribution):
+    global dataset
 
-    data = load_dataset(data_distribution)
-
+    data = load_distribution(data_distribution)
     file_name = os.path.join('test', 'write', f'txt_test_{data_distribution}_{chunk_size}.txt')
-    file = open(file_name, 'w')
+
+    def setup():
+        global dataset
+        if os.path.exists(file_name):
+            dataset.close()
+            os.remove(file_name)
+
+        dataset = open(file_name, 'w')
 
     def write_data():
+        global dataset
         num_chunks = total_size // chunk_size
         for i in range(num_chunks):
             start = i * chunk_size
             end = start + chunk_size
             for epoch, value, timestamp in zip(data['epochs'][start:end], data['values'][start:end], data['timestamps'][start:end]):
-                file.write(f"{epoch}, {value}, {timestamp}\n")
+                dataset.write(f"{epoch}, {value}, {timestamp}\n")
 
-    benchmark.pedantic(write_data, iterations=1, rounds=5, warmup_rounds=1)
+    benchmark.pedantic(write_data, setup=setup, iterations=1, rounds=5, warmup_rounds=1)
+
+    dataset.close()
 
     total_size_bytes = os.path.getsize(file_name)
     size_mb = total_size_bytes / (1024 * 1024)
