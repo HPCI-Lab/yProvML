@@ -52,9 +52,12 @@ model.compile(
 )
 prov4ml.log_model(model, "model_Sequential")
 
+EPOCHS = 6
+prov4ml.log_param("num_epochs", EPOCHS)
+
 model.fit(
     ds_train,
-    epochs=6,
+    epochs=EPOCHS,
     validation_data=ds_test,
 )
 
