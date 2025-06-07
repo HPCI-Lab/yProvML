@@ -3,7 +3,7 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 
 import sys
-sys.path.append("../ProvML")
+sys.path.append("./")
 import prov4ml
 
 prov4ml.start_run(

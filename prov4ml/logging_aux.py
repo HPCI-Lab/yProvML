@@ -7,7 +7,7 @@ import tensorflow as tf
 import keras
 
 from prov4ml.datamodel.attribute_type import LoggingItemKind
-from prov4ml.utils import energy_utils, flops_utils, system_utils, time_utils, funcs
+from prov4ml.utils import energy_utils, system_utils, time_utils, funcs
 from prov4ml.provenance.context import Context
 from prov4ml.datamodel.cumulative_metrics import FoldOperation
 from prov4ml.constants import PROV4ML_DATA
@@ -119,35 +119,35 @@ def log_model(model: Any, model_name: str = "default", log_model_info: bool = Tr
     if log_as_artifact:
         save_model_version(model, model_name, Context.EVALUATION)
         
-def log_flops_per_epoch(label: str, model: Any, dataset: Any, context: Context, step: Optional[int] = None) -> None:
-    """Logs the number of FLOPs (floating point operations) per epoch for the given model and dataset.
+# def log_flops_per_epoch(label: str, model: Any, dataset: Any, context: Context, step: Optional[int] = None) -> None:
+#     """Logs the number of FLOPs (floating point operations) per epoch for the given model and dataset.
     
-    Args:
-        label (str): The label to associate with the logged FLOPs per epoch.
-        model (Any): The model for which FLOPs per epoch are to be logged.
-        dataset (Any): The dataset used for training the model.
-        context (mlflow.tracking.Context): The MLflow tracking context.
-        step (Optional[int], optional): The step number for the logged FLOPs per epoch. Defaults to None.
+#     Args:
+#         label (str): The label to associate with the logged FLOPs per epoch.
+#         model (Any): The model for which FLOPs per epoch are to be logged.
+#         dataset (Any): The dataset used for training the model.
+#         context (mlflow.tracking.Context): The MLflow tracking context.
+#         step (Optional[int], optional): The step number for the logged FLOPs per epoch. Defaults to None.
 
-    Returns:
-        None
-    """
-    return log_metric(label, flops_utils.get_flops_per_epoch(model, dataset), context, step=step, source=LoggingItemKind.FLOPS_PER_EPOCH)
+#     Returns:
+#         None
+#     """
+#     return log_metric(label, flops_utils.get_flops_per_epoch(model, dataset), context, step=step, source=LoggingItemKind.FLOPS_PER_EPOCH)
 
-def log_flops_per_batch(label: str, model: Any, batch: Any, context: Context, step: Optional[int] = None) -> None:
-    """Logs the number of FLOPs (floating point operations) per batch for the given model and batch of data.
+# def log_flops_per_batch(label: str, model: Any, batch: Any, context: Context, step: Optional[int] = None) -> None:
+#     """Logs the number of FLOPs (floating point operations) per batch for the given model and batch of data.
     
-    Args:
-        label (str): The label to associate with the logged FLOPs per batch.
-        model (Any): The model for which FLOPs per batch are to be logged.
-        batch (Any): A batch of data used for inference with the model.
-        context (mlflow.tracking.Context): The MLflow tracking context.
-        step (Optional[int], optional): The step number for the logged FLOPs per batch. Defaults to None.
+#     Args:
+#         label (str): The label to associate with the logged FLOPs per batch.
+#         model (Any): The model for which FLOPs per batch are to be logged.
+#         batch (Any): A batch of data used for inference with the model.
+#         context (mlflow.tracking.Context): The MLflow tracking context.
+#         step (Optional[int], optional): The step number for the logged FLOPs per batch. Defaults to None.
 
-    Returns:
-        None
-    """
-    return log_metric(label, flops_utils.get_flops_per_batch(model, batch), context, step=step, source=LoggingItemKind.FLOPS_PER_BATCH)
+#     Returns:
+#         None
+#     """
+#     return log_metric(label, flops_utils.get_flops_per_batch(model, batch), context, step=step, source=LoggingItemKind.FLOPS_PER_BATCH)
 
 def log_system_metrics(
     context: Context,

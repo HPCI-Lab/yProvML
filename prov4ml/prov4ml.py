@@ -4,7 +4,6 @@ from contextlib import contextmanager
 
 from prov4ml.constants import PROV4ML_DATA
 from prov4ml.utils import energy_utils
-from prov4ml.utils import flops_utils
 from prov4ml.logging_aux import log_execution_start_time, log_execution_end_time
 from prov4ml.provenance.provenance_graph import create_prov_document
 from prov4ml.utils.file_utils import save_prov_file
@@ -74,7 +73,6 @@ def start_run_ctx(
     )
    
     energy_utils._carbon_init()
-    flops_utils._init_flops_counters()
 
     log_execution_start_time()
 
@@ -132,7 +130,6 @@ def start_run(
     )
 
     energy_utils._carbon_init()
-    flops_utils._init_flops_counters()
 
     log_execution_start_time()
 
