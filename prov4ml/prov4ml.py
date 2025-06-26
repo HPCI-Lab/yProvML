@@ -143,7 +143,7 @@ def start_run(
 def end_run(
         create_graph: Optional[bool] = False, 
         create_svg: Optional[bool] = False, 
-        crate_ro_crate: Optional[bool]=False, 
+        crate_ro_crate: Optional[bool]=False,
     ):  
     """
     Finalizes the provenance data collection and optionally creates visualization and provenance collection files.
@@ -195,4 +195,3 @@ def end_run(
 
     if crate_ro_crate: 
         create_rocrate_in_dir(PROV4ML_DATA.EXPERIMENT_DIR)
-

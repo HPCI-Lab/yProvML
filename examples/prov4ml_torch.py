@@ -25,6 +25,9 @@ prov4ml.start_run(
     disable_codecarbon=True
 )
 
+prov4ml.log_source_code("/Users/gabrielepadovani/Desktop/Università/Prov/yProvML/examples/prov4ml_torch.py")
+prov4ml.log_execution_command("python /Users/gabrielepadovani/Desktop/Università/Prov/yProvML/examples/prov4ml_torch.py")
+
 prov4ml.create_context("TRAINING_LOD2", prov4ml.Contexts.TRAINING)
 prov4ml.create_context("TRAINING_LOD3", prov4ml.Contexts.TRAINING_LOD2)
 
@@ -49,9 +52,6 @@ tform = transforms.Compose([
 ])
 # log the dataset transformation as one-time parameter
 prov4ml.log_param("dataset transformation", tform)
-
-# prov4ml.log_source_code("/Users/gabrielepadovani/Desktop/Università/Prov/ProvML/examples")
-# prov4ml.log_source_code()
 
 train_ds = MNIST(PATH_DATASETS, train=True, download=True, transform=tform)
 train_ds = IndexedDatasetWrapper(Subset(train_ds, range(BATCH_SIZE*5)))

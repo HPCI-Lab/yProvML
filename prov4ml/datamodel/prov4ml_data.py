@@ -58,14 +58,20 @@ class Prov4MLData:
         # look at PROV dir how many experiments are there with the same name
         if not os.path.exists(self.PROV_SAVE_PATH):
             os.makedirs(self.PROV_SAVE_PATH, exist_ok=True)
-        prev_exps = os.listdir(self.PROV_SAVE_PATH) if self.PROV_SAVE_PATH else []
+            self.RUN_ID = 0
+        else: 
+            prev_exps = os.listdir(self.PROV_SAVE_PATH) 
+            self.RUN_ID = max([int(exp.split("_")[-1].split(".")[0]) for exp in prev_exps if funcs.prov4ml_experiment_matches(experiment_name, exp)]) +1
 
         self.EXPERIMENT_NAME = experiment_name + f"_GR{self.global_rank}" if self.global_rank else experiment_name + f"_GR0"
-        self.RUN_ID = len([exp for exp in prev_exps if funcs.prov4ml_experiment_matches(experiment_name, exp)]) 
+        self.EXPERIMENT_NAME = f"{self.EXPERIMENT_NAME}_{self.RUN_ID}"
+
         self.EXPERIMENT_DIR = os.path.join(self.PROV_SAVE_PATH, experiment_name + f"_{self.RUN_ID}")
         self.ARTIFACTS_DIR = os.path.join(self.EXPERIMENT_DIR, "artifacts")
-        self.EXPERIMENT_NAME = f"{self.EXPERIMENT_NAME}_{self.RUN_ID}"
         self.METRIC_DIR = os.path.join(self.EXPERIMENT_DIR, "metrics")
+        os.makedirs(self.EXPERIMENT_DIR)
+        os.makedirs(self.ARTIFACTS_DIR)
+        os.makedirs(self.METRIC_DIR)
 
         self._init_root_context()
 
@@ -128,6 +134,8 @@ class Prov4MLData:
         entity= self.root_provenance_doc.entity(path, attributes)
         activity = get_activity(self.root_provenance_doc,"context:"+str(context))
         entity.wasGeneratedBy(activity)
+        # TODO: not sure this makes sense
+        # activity.used(entity)
         return entity
 
     def add_context(self, context : str, is_subcontext_of: Optional[Contexts] = None):     
@@ -288,10 +296,10 @@ class Prov4MLData:
         """
         if not self.is_collecting: return
 
-        if not os.path.exists(self.ARTIFACTS_DIR):
-            os.makedirs(self.ARTIFACTS_DIR, exist_ok=True)
-        if not os.path.exists(self.METRIC_DIR):
-            os.makedirs(self.METRIC_DIR, exist_ok=True)
+        # if not os.path.exists(self.ARTIFACTS_DIR):
+        #     os.makedirs(self.ARTIFACTS_DIR, exist_ok=True)
+        # if not os.path.exists(self.METRIC_DIR):
+        #     os.makedirs(self.METRIC_DIR, exist_ok=True)
 
         metric.save_to_file(self.METRIC_DIR, process=self.global_rank, sep=self.TMP_SEP)
 
