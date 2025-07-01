@@ -385,18 +385,13 @@ def log_source_code(path: Optional[str] = None) -> None:
             commit_hash = get_git_revision_hash()
             log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", f"{repo}/{commit_hash}")
     else:
-        # try:
         p = Path(path)
         if p.is_file():
             log_artifact(p.name.replace(".py", ""), p, log_copy_in_prov_directory=True, is_model=False, is_input=True)
-            log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", PROV4ML_DATA.ARTIFACTS_DIR + p.name)
+            log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, p.name))
         else:
             log_artifact("source_code", p, log_copy_in_prov_directory=True, is_model=False, is_input=True)
-            log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", PROV4ML_DATA.ARTIFACTS_DIR + "/source_code")
-        # except Exception:
-        #     print(f">log_source_code({path}): path is invalid")
-        #     if VERBOSE: 
-        #         print(f">log_source_code({path}): path is invalid")
+            log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, "source_code"))
 
 def create_context(context : str, is_subcontext_of=None): 
     PROV4ML_DATA.add_context(context, is_subcontext_of=is_subcontext_of)

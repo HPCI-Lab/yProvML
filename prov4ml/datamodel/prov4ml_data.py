@@ -295,12 +295,7 @@ class Prov4MLData:
         None
         """
         if not self.is_collecting: return
-
-        # if not os.path.exists(self.ARTIFACTS_DIR):
-        #     os.makedirs(self.ARTIFACTS_DIR, exist_ok=True)
-        # if not os.path.exists(self.METRIC_DIR):
-        #     os.makedirs(self.METRIC_DIR, exist_ok=True)
-
+        
         metric.save_to_file(self.METRIC_DIR, process=self.global_rank, sep=self.TMP_SEP)
 
     def save_all_metrics(self) -> None:
