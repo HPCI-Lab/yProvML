@@ -18,7 +18,8 @@ def start_run(
         save_after_n_logs: Optional[int] = 100,
         rank : Optional[int] = None, 
         disable_codecarbon : Optional[bool] = False,
-        metrics_file_type: MetricsType = MetricsType.TEXT,
+        metrics_file_type: MetricsType = MetricsType.CSV,
+        csv_separator : str = ",", 
         use_compressor: Optional[CompressorType] = None,
     ) -> None:
     """
@@ -51,6 +52,7 @@ def start_run(
         save_after_n_logs=save_after_n_logs, 
         rank=rank, 
         metrics_file_type=metrics_file_type,
+        csv_separator=csv_separator,
         use_compressor=use_compressor,
     )
 

@@ -23,7 +23,7 @@ prov4ml.start_run(
     save_after_n_logs=100,
     collect_all_processes=True, 
     disable_codecarbon=True, 
-    metrics_file_type=prov4ml.MetricsType.NETCDF, 
+    metrics_file_type=prov4ml.MetricsType.CSV,
     use_compressor=prov4ml.CompressorType.NONE
 )
 

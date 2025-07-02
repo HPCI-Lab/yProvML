@@ -36,6 +36,7 @@ class Prov4MLData:
         self.is_collecting = False
 
         self.save_metrics_after_n_logs = 100
+        self.csv_separator = ","
 
     def start_run(
             self, 
@@ -46,6 +47,7 @@ class Prov4MLData:
             save_after_n_logs: int = 100, 
             rank: Optional[int] = None, 
             metrics_file_type: MetricsType = MetricsType.ZARR,
+            csv_separator:str = ",", 
             use_compressor: Optional[CompressorType] = None,
         ) -> None:
 
@@ -78,6 +80,7 @@ class Prov4MLData:
 
         self.metrics_file_type = metrics_file_type
         self.use_compressor = use_compressor
+        self.csv_separator = csv_separator
 
         self._init_root_context()
 
@@ -304,7 +307,7 @@ class Prov4MLData:
         """
         if not self.is_collecting: return
         
-        metric.save_to_file(self.METRIC_DIR, file_type=self.metrics_file_type, process=self.global_rank)
+        metric.save_to_file(self.METRIC_DIR, file_type=self.metrics_file_type, process=self.global_rank, csv_separator=self.csv_separator)
 
     def save_all_metrics(self) -> None:
         """

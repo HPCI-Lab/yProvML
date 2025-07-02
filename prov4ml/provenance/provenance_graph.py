@@ -9,8 +9,6 @@ from pathlib import Path
 from prov4ml.constants import PROV4ML_DATA
 from prov4ml.datamodel.metric_type import get_file_type
 
-TMP_SEP = "\t"
-
 def create_prov_document() -> prov.ProvDocument:
     
     doc = PROV4ML_DATA.root_provenance_doc

@@ -95,7 +95,8 @@ class MetricInfo:
             self, 
             path: str, 
             file_type: MetricsType,
-            process: Optional[int] = None
+            csv_separator = ",", 
+            process: Optional[int] = None, 
         ) -> None:
         """
         Saves the metric information to a file.
@@ -120,8 +121,8 @@ class MetricInfo:
         ft = file + get_file_type(file_type)
         if file_type == MetricsType.ZARR:
             self.save_to_zarr(ft)
-        elif file_type == MetricsType.TEXT:
-            self.save_to_txt(ft)
+        elif file_type == MetricsType.CSV:
+            self.save_to_txt(ft, csv_separator)
         elif file_type == MetricsType.NETCDF:
             self.save_to_netCDF(ft)
         else:
@@ -228,7 +229,8 @@ class MetricInfo:
 
     def save_to_txt(
             self,
-            txt_file: str
+            txt_file: str, 
+            csv_separator : str = ",", 
         ) -> None:
         """
         Saves the metric information in a text file.
@@ -246,8 +248,7 @@ class MetricInfo:
 
         with open(txt_file, "a") as f:
             if not file_exists:
-                f.write(f"{self.name}, {self.context}, {self.source}\n")
+                f.write(f"{self.name}{csv_separator}{self.context}{csv_separator}{self.source}\n")
             for epoch, values in self.epochDataList.items():
                 for value, timestamp in values:
-                    f.write(f"{epoch}, {value}, {timestamp}\n")
-
+                    f.write(f"{epoch}{csv_separator}{value}{csv_separator}{timestamp}\n")
