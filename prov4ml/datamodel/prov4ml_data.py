@@ -11,15 +11,17 @@ from aenum import extend_enum
 from prov4ml.datamodel.artifact_data import ArtifactInfo
 from prov4ml.datamodel.attribute_type import LoggingItemKind
 from prov4ml.datamodel.metric_data import MetricInfo
-from prov4ml.datamodel.context import Contexts
+from prov4ml.datamodel.context import Context
+from prov4ml.datamodel.metric_type import MetricsType
+from prov4ml.datamodel.compressor_type import CompressorType
 from prov4ml.utils import funcs
 from prov4ml.utils.prov_utils import get_activity, create_activity
 from prov4ml.utils.funcs import get_global_rank, get_runtime_type
 
 class Prov4MLData:
     def __init__(self) -> None:
-        self.metrics: Dict[(str, Contexts), MetricInfo] = {}
-        self.artifacts: Dict[(str, Contexts), ArtifactInfo] = {}
+        self.metrics: Dict[(str, Context), MetricInfo] = {}
+        self.artifacts: Dict[(str, Context), ArtifactInfo] = {}
 
         self.PROV_SAVE_PATH = "prov_save_path"
         self.EXPERIMENT_NAME = "test_experiment"
@@ -34,7 +36,6 @@ class Prov4MLData:
         self.is_collecting = False
 
         self.save_metrics_after_n_logs = 100
-        self.TMP_SEP = "\t"
 
     def start_run(
             self, 
@@ -43,7 +44,9 @@ class Prov4MLData:
             user_namespace: Optional[str] = None, 
             collect_all_processes: bool = False, 
             save_after_n_logs: int = 100, 
-            rank: Optional[int] = None
+            rank: Optional[int] = None, 
+            metrics_file_type: MetricsType = MetricsType.ZARR,
+            use_compressor: Optional[CompressorType] = None,
         ) -> None:
 
         self.global_rank = funcs.get_global_rank() if rank is None else rank
@@ -73,6 +76,9 @@ class Prov4MLData:
         os.makedirs(self.ARTIFACTS_DIR)
         os.makedirs(self.METRIC_DIR)
 
+        self.metrics_file_type = metrics_file_type
+        self.use_compressor = use_compressor
+
         self._init_root_context()
 
     def _add_ctx(self, rootContext, ctx):
@@ -101,11 +107,11 @@ class Prov4MLData:
             f"{self.PROV_PREFIX}:python_version":str(sys.version), 
         })
         rootContext.wasAssociatedWith(user_ag)
-        self._add_ctx(rootContext, Contexts.TRAINING)
-        self._add_ctx(rootContext, Contexts.VALIDATION)
-        self._add_ctx(rootContext, Contexts.TESTING)
-        self._add_ctx(rootContext, Contexts.DATASETS)
-        self._add_ctx(rootContext, Contexts.MODELS)
+        self._add_ctx(rootContext, Context.TRAINING)
+        self._add_ctx(rootContext, Context.VALIDATION)
+        self._add_ctx(rootContext, Context.TESTING)
+        self._add_ctx(rootContext, Context.DATASETS)
+        self._add_ctx(rootContext, Context.MODELS)
 
         global_rank = get_global_rank()
         runtime_type = get_runtime_type()
@@ -124,32 +130,30 @@ class Prov4MLData:
 
 
         
-    def _log_input(self, path : str, context : Contexts, attributes : dict={}) -> prov.ProvEntity:
+    def _log_input(self, path : str, context : Context, attributes : dict={}) -> prov.ProvEntity:
         entity = self.root_provenance_doc.entity(path, attributes)
         activity = get_activity(self.root_provenance_doc,"context:"+str(context))
         activity.used(entity)
         return entity
     
-    def _log_output(self, path : str, context : Contexts, attributes : dict={}) -> prov.ProvEntity:
+    def _log_output(self, path : str, context : Context, attributes : dict={}) -> prov.ProvEntity:
         entity= self.root_provenance_doc.entity(path, attributes)
         activity = get_activity(self.root_provenance_doc,"context:"+str(context))
         entity.wasGeneratedBy(activity)
-        # TODO: not sure this makes sense
-        # activity.used(entity)
         return entity
 
-    def add_context(self, context : str, is_subcontext_of: Optional[Contexts] = None):     
+    def add_context(self, context : str, is_subcontext_of: Optional[Context] = None):     
         is_subcontext_of = str(is_subcontext_of).split(".")[-1]
 
-        extend_enum(Contexts, context, str(context))
-        new_context = create_activity(self.root_provenance_doc,'context:'+ str(getattr(Contexts, context)))
+        extend_enum(Context, context, str(context))
+        new_context = create_activity(self.root_provenance_doc,'context:'+ str(getattr(Context, context)))
 
         if is_subcontext_of is not None:
-            if not hasattr(Contexts, is_subcontext_of): 
+            if not hasattr(Context, is_subcontext_of): 
                 raise Exception(f"{is_subcontext_of} not found as a valid Context")
-            parent_context = get_activity(self.root_provenance_doc,'context:' + str(getattr(Contexts, is_subcontext_of)))
+            parent_context = get_activity(self.root_provenance_doc,'context:' + str(getattr(Context, is_subcontext_of)))
         else: 
-            parent_context = get_activity(self.root_provenance_doc,'context:'+ str(Contexts.EXPERIMENT))
+            parent_context = get_activity(self.root_provenance_doc,'context:'+ str(Context.EXPERIMENT))
 
         level=list(parent_context.get_attribute(f'{self.PROV_PREFIX}:level'))[0]
         new_context.wasInformedBy(parent_context)
@@ -169,7 +173,7 @@ class Prov4MLData:
             context = self.EXPERIMENT_NAME
 
         if (metric, context) not in self.metrics:
-            self.metrics[(metric, context)] = MetricInfo(metric, context, source=source)
+            self.metrics[(metric, context)] = MetricInfo(metric, context, source=source, use_compressor=self.use_compressor)
         
         self.metrics[(metric, context)].add_metric(value, step, funcs.get_current_time_millis())
 
@@ -181,7 +185,7 @@ class Prov4MLData:
             self, 
             parameter_name: str, 
             parameter_value: Any, 
-            context : Optional[Contexts] = None, 
+            context : Optional[Context] = None, 
         ) -> None:
         """
         Adds a parameter to the provenance data.
@@ -220,18 +224,21 @@ class Prov4MLData:
         if context is None: 
             context = self.EXPERIMENT_NAME
 
+        if not isinstance(artifact_path, str): 
+            print(artifact_path)
+            raise AttributeError(f">add_artifact({artifact_path}): the parameter \"artifact_path\" has to be a string")
+
         if log_copy_in_prov_directory: 
             try: 
                 path = Path(artifact_path)
+                newart_path = os.path.join(self.ARTIFACTS_DIR, path.name)
+                if path.is_file():
+                    shutil.copy(path, newart_path)
+                else:  
+                    shutil.copytree(path, newart_path)
+                artifact_path = newart_path
             except: 
                 Exception(f">add_artifact: log_copy_in_prov_directory was True but value is not a valid Path: {artifact_path}")
-
-            newart_path = self.ARTIFACTS_DIR + "/" + path.name
-            if path.is_file():
-                shutil.copy(path, newart_path)
-            else:  
-                shutil.copytree(path, newart_path)
-            artifact_path = newart_path
 
         self.artifacts[(artifact_name, context)] = ArtifactInfo(artifact_name, artifact_path, step, context=context, is_model=is_model)
 
@@ -239,6 +246,7 @@ class Prov4MLData:
             f'{self.PROV_PREFIX}:label': artifact_name, 
             f'{self.PROV_PREFIX}:path': artifact_path,
         }
+
         if is_input: 
             attributes.setdefault(f'{self.PROV_PREFIX}:role','input')
             return self._log_input(artifact_name, context, attributes)
@@ -296,7 +304,7 @@ class Prov4MLData:
         """
         if not self.is_collecting: return
         
-        metric.save_to_file(self.METRIC_DIR, process=self.global_rank, sep=self.TMP_SEP)
+        metric.save_to_file(self.METRIC_DIR, file_type=self.metrics_file_type, process=self.global_rank)
 
     def save_all_metrics(self) -> None:
         """

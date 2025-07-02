@@ -22,14 +22,16 @@ prov4ml.start_run(
     provenance_save_dir="prov",
     save_after_n_logs=100,
     collect_all_processes=True, 
-    disable_codecarbon=True
+    disable_codecarbon=True, 
+    metrics_file_type=prov4ml.MetricsType.NETCDF, 
+    use_compressor=prov4ml.CompressorType.NONE
 )
 
 prov4ml.log_source_code("/Users/gabrielepadovani/Desktop/Università/Prov/yProvML/examples/prov4ml_torch.py")
 prov4ml.log_execution_command("python /Users/gabrielepadovani/Desktop/Università/Prov/yProvML/examples/prov4ml_torch.py")
 
-prov4ml.create_context("TRAINING_LOD2", prov4ml.Contexts.TRAINING)
-prov4ml.create_context("TRAINING_LOD3", prov4ml.Contexts.TRAINING_LOD2)
+prov4ml.create_context("TRAINING_LOD2", prov4ml.Context.TRAINING)
+prov4ml.create_context("TRAINING_LOD3", prov4ml.Context.TRAINING_LOD2)
 
 class MNISTModel(nn.Module):
     def __init__(self):
@@ -67,7 +69,7 @@ optim = torch.optim.Adam(mnist_model.parameters(), lr=0.001)
 prov4ml.log_param("optimizer", "Adam")
 
 loss_fn = nn.MSELoss().to(DEVICE)
-prov4ml.log_param("loss_fn", "MSELoss", prov4ml.Contexts.TRAINING_LOD2)
+prov4ml.log_param("loss_fn", "MSELoss", prov4ml.Context.TRAINING_LOD2)
 
 losses = []
 for epoch in range(EPOCHS):
@@ -83,12 +85,12 @@ for epoch in range(EPOCHS):
         losses.append(loss.item())
     
         # log system and carbon metrics (once per epoch), as well as the execution time
-        prov4ml.log_metric("MSE", loss.item(), context=prov4ml.Contexts.TRAINING, step=epoch)
-        prov4ml.log_metric("Indices", indices.tolist(), context=prov4ml.Contexts.TRAINING_LOD2, step=epoch)
-        # prov4ml.log_carbon_metrics(Contexts.TRAINING, step=epoch)
-        prov4ml.log_system_metrics(prov4ml.Contexts.TRAINING, step=epoch)
+        prov4ml.log_metric("MSE", loss.item(), context=prov4ml.Context.TRAINING, step=epoch)
+        # prov4ml.log_metric("Indices", indices.tolist(), context=prov4ml.Context.TRAINING_LOD2, step=epoch)
+        # prov4ml.log_carbon_metrics(prov4ml.Context.TRAINING, step=epoch)
+        prov4ml.log_system_metrics(prov4ml.Context.TRAINING, step=epoch)
     # save incremental model versions
-    prov4ml.save_model_version(f"mnist_model_version", mnist_model, prov4ml.Contexts.MODELS, epoch)
+    prov4ml.save_model_version(f"mnist_model_version", mnist_model, prov4ml.Context.MODELS, epoch)
 
     mnist_model.eval()
     # mnist_model.cpu()
@@ -98,8 +100,8 @@ for epoch in range(EPOCHS):
         y2 = F.one_hot(y, 10).float()
         loss = loss_fn(y_hat, y2)
 
-        prov4ml.log_metric("MSE", loss.item(), prov4ml.Contexts.VALIDATION, step=epoch)
-        prov4ml.log_metric("Indices", indices, context=prov4ml.Contexts.TRAINING_LOD2, step=epoch)
+        prov4ml.log_metric("MSE", loss.item(), prov4ml.Context.VALIDATION, step=epoch)
+        # prov4ml.log_metric("Indices", indices, context=prov4ml.Context.TRAINING_LOD2, step=epoch)
 
 prov4ml.log_model("mnist_model_final", mnist_model, log_model_layers=True, is_input=False)
 

@@ -11,13 +11,13 @@ from typing import Any, Optional, Union
 
 from prov4ml.datamodel.attribute_type import LoggingItemKind
 from prov4ml.utils import energy_utils, flops_utils, system_utils, time_utils, funcs
-from prov4ml.datamodel.context import Contexts
+from prov4ml.datamodel.context import Context
 from prov4ml.constants import PROV4ML_DATA, VERBOSE
     
 def log_metric(
         key: str, 
         value: float, 
-        context:Contexts, 
+        context:Context, 
         step: Optional[int] = 0, 
         source: LoggingItemKind = None, 
     ) -> None:
@@ -44,7 +44,7 @@ def log_execution_end_time() -> None:
     """Logs the end time of the current execution."""
     return log_param("execution_end_time", time_utils.get_time())
 
-def log_current_execution_time(label: str, context: Contexts, step: Optional[int] = None) -> None:
+def log_current_execution_time(label: str, context: Context, step: Optional[int] = None) -> None:
     """Logs the current execution time under the given label.
     
     Args:
@@ -57,7 +57,7 @@ def log_current_execution_time(label: str, context: Contexts, step: Optional[int
     """
     return log_metric(label, time_utils.get_time(), context, step=step, source=LoggingItemKind.EXECUTION_TIME)
 
-def log_param(key: str, value: Any, context : Contexts = None) -> None:
+def log_param(key: str, value: Any, context : Context = None) -> None:
     """Logs a single parameter key-value pair. 
     
     Args:
@@ -160,7 +160,7 @@ def log_model(
         log_model_layers (bool, optional): Whether to log model layers details. Defaults to False.
         log_as_artifact (bool, optional): Whether to log the model as an artifact. Defaults to True.
     """
-    e = save_model_version(model_name, model, Contexts.MODELS, incremental=False, is_input=is_input)
+    e = save_model_version(model_name, model, Context.MODELS, incremental=False, is_input=is_input)
 
     if log_model_info:
         d = _get_model_memory_footprint(model_name, model)
@@ -171,7 +171,7 @@ def log_model(
         e.add_attributes(d)
 
      
-def log_flops_per_epoch(label: str, model: Any, dataset: Any, context: Contexts, step: Optional[int] = None) -> None:
+def log_flops_per_epoch(label: str, model: Any, dataset: Any, context: Context, step: Optional[int] = None) -> None:
     """Logs the number of FLOPs (floating point operations) per epoch for the given model and dataset.
     
     Args:
@@ -186,7 +186,7 @@ def log_flops_per_epoch(label: str, model: Any, dataset: Any, context: Contexts,
     """
     return log_metric(label, flops_utils.get_flops_per_epoch(model, dataset), context, step=step, source=LoggingItemKind.FLOPS_PER_EPOCH)
 
-def log_flops_per_batch(label: str, model: Any, batch: Any, context: Contexts, step: Optional[int] = None) -> None:
+def log_flops_per_batch(label: str, model: Any, batch: Any, context: Context, step: Optional[int] = None) -> None:
     """Logs the number of FLOPs (floating point operations) per batch for the given model and batch of data.
     
     Args:
@@ -202,7 +202,7 @@ def log_flops_per_batch(label: str, model: Any, batch: Any, context: Contexts, s
     return log_metric(label, flops_utils.get_flops_per_batch(model, batch), context, step=step, source=LoggingItemKind.FLOPS_PER_BATCH)
 
 def log_system_metrics(
-    context: Contexts,
+    context: Context,
     step: Optional[int] = None,
     ) -> None:
     """Logs system metrics such as CPU usage, memory usage, disk usage, and GPU metrics.
@@ -223,7 +223,7 @@ def log_system_metrics(
     log_metric("gpu_power_usage", system_utils.get_gpu_power_usage(), context, step=step, source=LoggingItemKind.SYSTEM_METRIC)
 
 def log_carbon_metrics(
-    context: Contexts,
+    context: Context,
     step: Optional[int] = None,
     ):
     """Logs carbon emissions metrics such as energy consumed, emissions rate, and power consumption.
@@ -250,7 +250,7 @@ def log_carbon_metrics(
 def log_artifact(
         artifact_name : str, 
         artifact_path : str, 
-        context: Optional[Contexts] = None,
+        context: Optional[Context] = None,
         step: Optional[int] = None, 
         log_copy_in_prov_directory : bool = True, 
         is_model : bool = False, 
@@ -281,7 +281,7 @@ def log_artifact(
 def save_model_version(
         model_name: str, 
         model: Union[torch.nn.Module, Any], 
-        context: Optional[Contexts] = None, 
+        context: Optional[Context] = None, 
         step: Optional[int] = None, 
         incremental : bool = True, 
         is_input : bool =False, 
@@ -325,7 +325,7 @@ def log_dataset(dataset_label : str, dataset : Union[DataLoader, Subset, Dataset
         None
     """
 
-    e = log_artifact(f"{dataset_label}", "", context=Contexts.DATASETS, log_copy_in_prov_directory=False, is_model=False, is_input=True)
+    e = log_artifact(f"{dataset_label}", "", context=Context.DATASETS, log_copy_in_prov_directory=False, is_model=False, is_input=True)
     e.add_attributes({f"{dataset_label}_stat_total_samples": len(dataset)})
 
     # handle datasets from DataLoader
@@ -387,10 +387,10 @@ def log_source_code(path: Optional[str] = None) -> None:
     else:
         p = Path(path)
         if p.is_file():
-            log_artifact(p.name.replace(".py", ""), p, log_copy_in_prov_directory=True, is_model=False, is_input=True)
+            log_artifact(p.name.replace(".py", ""), str(p), log_copy_in_prov_directory=True, is_model=False, is_input=True)
             log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, p.name))
         else:
-            log_artifact("source_code", p, log_copy_in_prov_directory=True, is_model=False, is_input=True)
+            log_artifact("source_code", str(p), log_copy_in_prov_directory=True, is_model=False, is_input=True)
             log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, "source_code"))
 
 def create_context(context : str, is_subcontext_of=None): 

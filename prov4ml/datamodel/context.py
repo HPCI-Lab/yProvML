@@ -1,7 +1,7 @@
 
 from aenum import Enum
 
-class Contexts(Enum): 
+class Context(Enum): 
     # EXPERIMENT = "EXPERIMENT"
     TRAINING = "TRAINING"
     VALIDATION = "VALIDATION"
@@ -22,10 +22,21 @@ class Contexts(Enum):
         """
         try: 
             context = eval(context)
-            if type(context) == Contexts: 
+            if type(context) == Context: 
                 return context
             else: 
                 raise ValueError(f"Invalid context: {context}")
         except: 
-            raise ValueError(f"Not a context: {context}")
-            
+            if context == 'training' or context == 'Context.TRAINING':
+                return Context.TRAINING
+            elif context == 'testing' or context == 'Context.TESTING':
+                return Context.TESTING
+            elif context == 'validation' or context == 'Context.VALIDATION':
+                return Context.VALIDATION
+            elif context == 'models' or context == 'Context.MODELS':
+                return Context.MODELS
+            elif context == 'datasets' or context == 'Context.DATASETS':
+                return Context.DATASETS
+            else:
+                raise ValueError(f"Not a context: {context}")
+                    
