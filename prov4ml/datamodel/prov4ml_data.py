@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 import prov.model as prov
 import pwd
+import warnings
 from aenum import extend_enum
 
 from prov4ml.datamodel.artifact_data import ArtifactInfo
@@ -13,7 +14,7 @@ from prov4ml.datamodel.attribute_type import LoggingItemKind
 from prov4ml.datamodel.metric_data import MetricInfo
 from prov4ml.datamodel.context import Context
 from prov4ml.datamodel.metric_type import MetricsType
-from prov4ml.datamodel.compressor_type import CompressorType
+from prov4ml.datamodel.compressor_type import CompressorType, COMPRESSORS_FOR_ZARR
 from prov4ml.utils import funcs
 from prov4ml.utils.prov_utils import get_activity, create_activity
 from prov4ml.utils.funcs import get_global_rank, get_runtime_type
@@ -60,13 +61,26 @@ class Prov4MLData:
         if prov_save_path: self.PROV_SAVE_PATH = prov_save_path
         if user_namespace: self.USER_NAMESPACE = user_namespace
 
+        if use_compressor in COMPRESSORS_FOR_ZARR and metrics_file_type != MetricsType.ZARR: 
+            warnings.warn(f">start_run(): use_compressor chosen is only compatible with MetricsType.ZARR, but saving type is {metrics_file_type}, the compressor chosen will have no effect")
+        if metrics_file_type == MetricsType.ZARR and use_compressor not in COMPRESSORS_FOR_ZARR: 
+            raise AttributeError(f">start_run(): use_compressor chosen is only compatible with MetricsType.ZARR")
+
+        if metrics_file_type == MetricsType.ZARR and use_compressor:
+            use_compressor = CompressorType.BLOSC_ZSTD
+        elif metrics_file_type in [MetricsType.NETCDF, MetricsType.CSV] and use_compressor:
+            use_compressor = CompressorType.ZIP
+        if not use_compressor: 
+            use_compressor = CompressorType.NONE
+
         # look at PROV dir how many experiments are there with the same name
         if not os.path.exists(self.PROV_SAVE_PATH):
             os.makedirs(self.PROV_SAVE_PATH, exist_ok=True)
             self.RUN_ID = 0
         else: 
             prev_exps = os.listdir(self.PROV_SAVE_PATH) 
-            self.RUN_ID = max([int(exp.split("_")[-1].split(".")[0]) for exp in prev_exps if funcs.prov4ml_experiment_matches(experiment_name, exp)]) +1
+            matching_files = [int(exp.split("_")[-1].split(".")[0]) for exp in prev_exps if funcs.prov4ml_experiment_matches(experiment_name, exp)]
+            self.RUN_ID = max(matching_files)+1  if len(matching_files) > 0 else 0
 
         self.EXPERIMENT_NAME = experiment_name + f"_GR{self.global_rank}" if self.global_rank else experiment_name + f"_GR0"
         self.EXPERIMENT_NAME = f"{self.EXPERIMENT_NAME}_{self.RUN_ID}"

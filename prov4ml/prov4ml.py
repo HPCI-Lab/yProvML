@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, Union
 
 from prov4ml.constants import PROV4ML_DATA
 from prov4ml.utils import energy_utils
@@ -20,7 +20,7 @@ def start_run(
         disable_codecarbon : Optional[bool] = False,
         metrics_file_type: MetricsType = MetricsType.CSV,
         csv_separator : str = ",", 
-        use_compressor: Optional[CompressorType] = None,
+        use_compressor: Optional[Union[CompressorType, bool]] = None,
     ) -> None:
     """
     Initializes the provenance data collection and sets up various utilities for tracking.

@@ -16,15 +16,17 @@ BATCH_SIZE = 16
 EPOCHS = 2
 DEVICE = "cpu"
 
+TYPE = prov4ml.MetricsType.NETCDF
+COMP = prov4ml.CompressorType.BLOSC_ZSTD
 prov4ml.start_run(
     prov_user_namespace="www.example.org",
-    experiment_name="experiment_name", 
+    experiment_name=f"{TYPE}_{COMP}", 
     provenance_save_dir="prov",
     save_after_n_logs=100,
     collect_all_processes=True, 
     disable_codecarbon=True, 
-    metrics_file_type=prov4ml.MetricsType.CSV,
-    use_compressor=prov4ml.CompressorType.NONE
+    metrics_file_type=TYPE,
+    use_compressor=COMP
 )
 
 prov4ml.log_source_code("/Users/gabrielepadovani/Desktop/Università/Prov/yProvML/examples/prov4ml_torch.py")
