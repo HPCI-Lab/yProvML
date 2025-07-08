@@ -8,6 +8,7 @@ import prov.model as prov
 import pwd
 import warnings
 from aenum import extend_enum
+import subprocess
 
 from prov4ml.datamodel.artifact_data import ArtifactInfo
 from prov4ml.datamodel.attribute_type import LoggingItemKind
@@ -158,6 +159,33 @@ class Prov4MLData:
         activity = get_activity(self.root_provenance_doc,"context:"+str(context))
         entity.wasGeneratedBy(activity)
         return entity
+    
+    def _get_git_revision_hash() -> str:
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
+
+    def _get_git_remote_url() -> Optional[str]:
+        try:
+            remote_url = subprocess.check_output(['git', 'config', '--get', 'remote.origin.url'], stderr=subprocess.DEVNULL).strip().decode()
+            return remote_url
+        except subprocess.CalledProcessError:
+            print("> get_git_remote_url() Repository not found")
+            return None  # No remote found
+
+    def add_source_code(self, path: str): 
+        if path is None:
+            repo = _get_git_remote_url()
+            if repo is not None:
+                commit_hash = _get_git_revision_hash()
+                log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", f"{repo}/{commit_hash}")
+        else:
+            p = Path(path)
+            if p.is_file():
+                self.add_artifact(p.name.replace(".py", ""), str(p), log_copy_in_prov_directory=True, is_model=False, is_input=True)
+                self.add_parameter(f"{self.PROV_PREFIX}:source_code", os.path.join(self.ARTIFACTS_DIR, p.name))
+            else:
+                self.add_artifact("source_code", str(p), log_copy_in_prov_directory=True, is_model=False, is_input=True)
+                self.add_parameter(f"{self.PROV_PREFIX}:source_code", os.path.join(self.ARTIFACTS_DIR, "source_code"))
+
 
     def add_context(self, context : str, is_subcontext_of: Optional[Context] = None):     
         is_subcontext_of = str(is_subcontext_of).split(".")[-1]
@@ -248,12 +276,20 @@ class Prov4MLData:
         if log_copy_in_prov_directory: 
             try: 
                 path = Path(artifact_path)
+
+                # create original artefact
+                original = self.add_artifact("Original " + path.name, str(path), log_copy_in_prov_directory=False, is_model=is_model, is_input=is_input)
+                copied = self.add_artifact(path.name, os.path.join(self.ARTIFACTS_DIR, path.name), log_copy_in_prov_directory=False, is_model=is_model, is_input=True)
+                copied.wasDerivedFrom(original)
+
                 newart_path = os.path.join(self.ARTIFACTS_DIR, path.name)
                 if path.is_file():
                     shutil.copy(path, newart_path)
                 else:  
                     shutil.copytree(path, newart_path)
                 artifact_path = newart_path
+
+                return copied
             except: 
                 Exception(f">add_artifact: log_copy_in_prov_directory was True but value is not a valid Path: {artifact_path}")
 

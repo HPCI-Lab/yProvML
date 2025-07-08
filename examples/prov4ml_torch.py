@@ -16,8 +16,8 @@ BATCH_SIZE = 16
 EPOCHS = 2
 DEVICE = "cpu"
 
-TYPE = prov4ml.MetricsType.NETCDF
-COMP = prov4ml.CompressorType.BLOSC_ZSTD
+TYPE = prov4ml.MetricsType.ZARR
+COMP = prov4ml.CompressorType.LZ4
 prov4ml.start_run(
     prov_user_namespace="www.example.org",
     experiment_name=f"{TYPE}_{COMP}", 
@@ -30,7 +30,7 @@ prov4ml.start_run(
 )
 
 prov4ml.log_source_code("/Users/gabrielepadovani/Desktop/Università/Prov/yProvML/examples/prov4ml_torch.py")
-prov4ml.log_execution_command("python /Users/gabrielepadovani/Desktop/Università/Prov/yProvML/examples/prov4ml_torch.py")
+prov4ml.log_execution_command("python /workspace/MetricsType.ZARR_CompressorType.LZ4_3/artifacts/prov4ml_torch.py")
 
 prov4ml.create_context("TRAINING_LOD2", prov4ml.Context.TRAINING)
 prov4ml.create_context("TRAINING_LOD3", prov4ml.Context.TRAINING_LOD2)

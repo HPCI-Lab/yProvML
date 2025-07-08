@@ -354,24 +354,6 @@ def log_execution_command(cmd: str) -> None:
     """
     log_param("prov-ml:execution_command", cmd)
 
-def get_git_remote_url() -> Optional[str]:
-    """
-    Retrieves the Git remote URL of the repository.
-
-    Returns:
-        The remote URL as a string if found, otherwise None.
-    """
-    try:
-        remote_url = subprocess.check_output(['git', 'config', '--get', 'remote.origin.url'], stderr=subprocess.DEVNULL).strip().decode()
-        return remote_url
-    except subprocess.CalledProcessError:
-        if VERBOSE: 
-            print("> get_git_remote_url() Repository not found")
-        return None  # No remote found
-
-def get_git_revision_hash() -> str:
-    return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
-
 def log_source_code(path: Optional[str] = None) -> None:
     """
     Logs the source code location, either from a Git repository or a specified path.
@@ -379,19 +361,7 @@ def log_source_code(path: Optional[str] = None) -> None:
     Args: 
         path (Optional[str]): The path to the source code. If None, attempts to retrieve from Git.
     """
-    if path is None:
-        repo = get_git_remote_url()
-        if repo is not None:
-            commit_hash = get_git_revision_hash()
-            log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", f"{repo}/{commit_hash}")
-    else:
-        p = Path(path)
-        if p.is_file():
-            log_artifact(p.name.replace(".py", ""), str(p), log_copy_in_prov_directory=True, is_model=False, is_input=True)
-            log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, p.name))
-        else:
-            log_artifact("source_code", str(p), log_copy_in_prov_directory=True, is_model=False, is_input=True)
-            log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, "source_code"))
+    PROV4ML_DATA.add_source_code(path)
 
 def create_context(context : str, is_subcontext_of=None): 
     PROV4ML_DATA.add_context(context, is_subcontext_of=is_subcontext_of)
