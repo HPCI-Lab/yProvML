@@ -352,7 +352,7 @@ def log_execution_command(cmd: str, path : str) -> None:
     Args:
         cmd (str): The command to be logged.
     """
-    path = os.path.join("workspace", PROV4ML_DATA.ARTIFACTS_DIR, path)
+    path = os.path.join("/workspace", f"{PROV4ML_DATA.CLEAN_EXPERIMENT_NAME}_{PROV4ML_DATA.RUN_ID}", "artifacts", path)
     log_param("prov-ml:execution_command", cmd + " " + path)
 
 def log_source_code(path: Optional[str] = None) -> None:

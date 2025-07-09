@@ -107,7 +107,7 @@ def end_run(
 
     doc = create_prov_document()
    
-    graph_filename = f'prov_{PROV4ML_DATA.EXPERIMENT_NAME}.json'
+    graph_filename = f'prov_{PROV4ML_DATA.PROV_JSON_NAME}.json'
     
     if not os.path.exists(PROV4ML_DATA.EXPERIMENT_DIR):
         os.makedirs(PROV4ML_DATA.EXPERIMENT_DIR, exist_ok=True)

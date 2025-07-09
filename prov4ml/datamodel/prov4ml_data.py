@@ -26,7 +26,7 @@ class Prov4MLData:
         self.artifacts: Dict[(str, Context), ArtifactInfo] = {}
 
         self.PROV_SAVE_PATH = "prov_save_path"
-        self.EXPERIMENT_NAME = "test_experiment"
+        self.PROV_JSON_NAME = "test_experiment"
         self.EXPERIMENT_DIR = "test_experiment_dir"
         self.ARTIFACTS_DIR = "artifact_dir"
         self.METRIC_DIR = "metric_dir"
@@ -83,10 +83,11 @@ class Prov4MLData:
             matching_files = [int(exp.split("_")[-1].split(".")[0]) for exp in prev_exps if funcs.prov4ml_experiment_matches(experiment_name, exp)]
             self.RUN_ID = max(matching_files)+1  if len(matching_files) > 0 else 0
 
-        self.EXPERIMENT_NAME = experiment_name + f"_GR{self.global_rank}" if self.global_rank else experiment_name + f"_GR0"
-        self.EXPERIMENT_NAME = f"{self.EXPERIMENT_NAME}_{self.RUN_ID}"
+        self.CLEAN_EXPERIMENT_NAME = experiment_name
+        self.PROV_JSON_NAME = self.CLEAN_EXPERIMENT_NAME + f"_GR{self.global_rank}" if self.global_rank else experiment_name + f"_GR0"
+        self.PROV_JSON_NAME = f"{self.PROV_JSON_NAME}_{self.RUN_ID}"
 
-        self.EXPERIMENT_DIR = os.path.join(self.PROV_SAVE_PATH, experiment_name + f"_{self.RUN_ID}")
+        self.EXPERIMENT_DIR = os.path.join(self.PROV_SAVE_PATH, f"{self.CLEAN_EXPERIMENT_NAME}_{self.RUN_ID}")
         self.ARTIFACTS_DIR = os.path.join(self.EXPERIMENT_DIR, "artifacts")
         self.METRIC_DIR = os.path.join(self.EXPERIMENT_DIR, "metrics")
         os.makedirs(self.EXPERIMENT_DIR)
@@ -108,7 +109,7 @@ class Prov4MLData:
         self.root_provenance_doc = prov.ProvDocument()
         self.root_provenance_doc.add_namespace('context', 'context')
         self.root_provenance_doc.add_namespace(self.PROV_PREFIX, self.PROV_PREFIX)
-        self.root_provenance_doc.set_default_namespace(self.EXPERIMENT_NAME)
+        self.root_provenance_doc.set_default_namespace(self.PROV_JSON_NAME)
         # self.root_provenance_doc.set_default_namespace(self.USER_NAMESPACE)
         self.root_provenance_doc.add_namespace('prov','http://www.w3.org/ns/prov#')
         self.root_provenance_doc.add_namespace('xsd','http://www.w3.org/2000/10/XMLSchema#')
@@ -116,13 +117,13 @@ class Prov4MLData:
         # self.provDoc.add_namespace(name,name)
 
         user_ag = self.root_provenance_doc.agent(f'{pwd.getpwuid(os.getuid())[0]}')
-        rootContext = self.root_provenance_doc.activity("context:"+ self.EXPERIMENT_NAME)
+        rootContext = self.root_provenance_doc.activity("context:"+ self.PROV_JSON_NAME)
         rootContext.add_attributes({
             f'{self.PROV_PREFIX}:level':0, 
             f"{self.PROV_PREFIX}:provenance_path":self.PROV_SAVE_PATH,
             f"{self.PROV_PREFIX}:artifact_uri":self.ARTIFACTS_DIR,
             f"{self.PROV_PREFIX}:experiment_dir":self.EXPERIMENT_DIR,
-            f"{self.PROV_PREFIX}:experiment_name":self.EXPERIMENT_NAME,
+            f"{self.PROV_PREFIX}:experiment_name":self.PROV_JSON_NAME,
             f"{self.PROV_PREFIX}:run_id":self.RUN_ID,
             f"{self.PROV_PREFIX}:python_version":str(sys.version), 
         })
@@ -251,7 +252,7 @@ class Prov4MLData:
         if not self.is_collecting: return
 
         if context is None: 
-            context = self.EXPERIMENT_NAME
+            context = self.PROV_JSON_NAME
 
         current_activity = get_activity(self.root_provenance_doc,"context:"+ str(context))
         current_activity.add_attributes({parameter_name:str(parameter_value)})
@@ -269,7 +270,7 @@ class Prov4MLData:
         if not self.is_collecting: return
 
         if context is None: 
-            context = self.EXPERIMENT_NAME
+            context = self.PROV_JSON_NAME
 
         if not isinstance(artifact_path, str): 
             print(artifact_path)

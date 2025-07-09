@@ -90,7 +90,7 @@ for epoch in range(EPOCHS):
         prov4ml.log_metric("MSE", loss.item(), context=prov4ml.Context.TRAINING, step=epoch)
         # prov4ml.log_metric("Indices", indices.tolist(), context=prov4ml.Context.TRAINING_LOD2, step=epoch)
         # prov4ml.log_carbon_metrics(prov4ml.Context.TRAINING, step=epoch)
-        prov4ml.log_system_metrics(prov4ml.Context.TRAINING, step=epoch)
+        # prov4ml.log_system_metrics(prov4ml.Context.TRAINING, step=epoch)
     # save incremental model versions
     prov4ml.save_model_version(f"mnist_model_version", mnist_model, prov4ml.Context.MODELS, epoch)
 
