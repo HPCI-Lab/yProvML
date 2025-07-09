@@ -64,7 +64,7 @@ class Prov4MLData:
 
         if use_compressor in COMPRESSORS_FOR_ZARR and metrics_file_type != MetricsType.ZARR: 
             warnings.warn(f">start_run(): use_compressor chosen is only compatible with MetricsType.ZARR, but saving type is {metrics_file_type}, the compressor chosen will have no effect")
-        if metrics_file_type == MetricsType.ZARR and use_compressor not in COMPRESSORS_FOR_ZARR: 
+        if metrics_file_type == MetricsType.ZARR and use_compressor != False and use_compressor not in COMPRESSORS_FOR_ZARR: 
             raise AttributeError(f">start_run(): use_compressor chosen is only compatible with MetricsType.ZARR")
 
         if metrics_file_type == MetricsType.ZARR and use_compressor:
@@ -121,6 +121,8 @@ class Prov4MLData:
             f'{self.PROV_PREFIX}:level':0, 
             f"{self.PROV_PREFIX}:provenance_path":self.PROV_SAVE_PATH,
             f"{self.PROV_PREFIX}:artifact_uri":self.ARTIFACTS_DIR,
+            f"{self.PROV_PREFIX}:experiment_dir":self.EXPERIMENT_DIR,
+            f"{self.PROV_PREFIX}:experiment_name":self.EXPERIMENT_NAME,
             f"{self.PROV_PREFIX}:run_id":self.RUN_ID,
             f"{self.PROV_PREFIX}:python_version":str(sys.version), 
         })
