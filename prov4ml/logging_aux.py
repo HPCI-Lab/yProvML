@@ -345,14 +345,15 @@ def log_dataset(dataset_label : str, dataset : Union[DataLoader, Subset, Dataset
         dataset = dl.dataset
         e.add_attributes({f"{dataset_label}_stat_total_steps": len(dl)})
 
-def log_execution_command(cmd: str) -> None:
+def log_execution_command(cmd: str, path : str) -> None:
     """
     Logs the execution command.
     
     Args:
         cmd (str): The command to be logged.
     """
-    log_param("prov-ml:execution_command", cmd)
+    path = os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, path)
+    log_param("prov-ml:execution_command", cmd + " " + path)
 
 def log_source_code(path: Optional[str] = None) -> None:
     """

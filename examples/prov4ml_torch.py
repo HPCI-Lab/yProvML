@@ -30,7 +30,7 @@ prov4ml.start_run(
 )
 
 prov4ml.log_source_code("/Users/gabrielepadovani/Desktop/Università/Prov/yProvML/examples/prov4ml_torch.py")
-prov4ml.log_execution_command("python /workspace/MetricsType.ZARR_False_0/artifacts/prov4ml_torch.py")
+prov4ml.log_execution_command(cmd="python", path="prov4ml_torch.py")
 
 prov4ml.create_context("TRAINING_LOD2", prov4ml.Context.TRAINING)
 prov4ml.create_context("TRAINING_LOD3", prov4ml.Context.TRAINING_LOD2)
