@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: yProv4ML
+name: Upload yProv4ML to PyPI
 
 on:
   release:
