@@ -42,5 +42,8 @@ For detailed information, please refer to the [Documentation](https://hpci-lab.g
 # Contributors
 
 - [Gabriele Padovani](https://github.com/lelepado01)
-- [Luca Davi](https://github.com/lucadavii)
 - [Sandro Luigi Fiore](https://github.com/sandrofioretn)
+
+# Former Contributors
+
+- [Luca Davi](https://github.com/lucadavii)
