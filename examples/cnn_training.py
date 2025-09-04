@@ -24,7 +24,7 @@ prov4ml.start_run(
     save_after_n_logs=1000,                   # <-- flush every log so .nc files appear immediately
     collect_all_processes=True,
     disable_codecarbon=True,
-    unify_experiments=False
+    unify_experiments=True
 )
 
 PATH_DATASETS = "./data"
