@@ -1,124 +1,126 @@
+import os
+import sys
+import glob
+
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torchvision.datasets import CIFAR10
 from torchvision import transforms
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
-import sys
-sys.path.append("../yProvML")
 
+# local prov4ml
+sys.path.append("../yProvML")
 import prov4ml
+from prov4ml.datamodel.metric_type import MetricsType  # <-- important
+from prov4ml.constants import PROV4ML_DATA
+
 
 prov4ml.start_run(
     prov_user_namespace="www.example.org",
-    experiment_name="experiment_name", 
+    experiment_name="experiment_name",
     provenance_save_dir="prov",
-    save_after_n_logs=100,
-    collect_all_processes=True, 
-    disable_codecarbon=True
+    metrics_file_type=MetricsType.NETCDF,  # <-- NetCDF
+    save_after_n_logs=1000,                   # <-- flush every log so .nc files appear immediately
+    collect_all_processes=True,
+    disable_codecarbon=True,
+    unify_experiments=False
 )
 
 PATH_DATASETS = "./data"
 BATCH_SIZE = 32
 EPOCHS = 5
 DEVICE = "cpu"
+LR = 1e-3
+from prov4ml.datamodel.metric_type import get_file_type
+from prov4ml.constants import PROV4ML_DATA
+import inspect, prov4ml.datamodel.metric_data as md
 
-class CNN(nn.Module): 
-        
+print("Using prov4ml from:", prov4ml.__file__)
+print("Runtime metrics_file_type:", PROV4ML_DATA.metrics_file_type)
+print("File extension for runtime type:", get_file_type(PROV4ML_DATA.metrics_file_type))
+print("save_after_n_logs:", PROV4ML_DATA.save_metrics_after_n_logs)
+print("MetricInfo.save_to_file implementation:\n", inspect.getsource(md.MetricInfo.save_to_file))
+
+class CNN(nn.Module):
     def __init__(self, out_classes=10):
         super().__init__()
         self.sequential = nn.Sequential(
-            nn.Conv2d(3,20,5),
+            nn.Conv2d(3, 20, 5),
             nn.ReLU(),
-            nn.Conv2d(20,64,5),
+            nn.Conv2d(20, 64, 5),
             nn.ReLU()
         )
+        self.mlp = nn.Linear(36864, out_classes)
 
-        self.mlp = nn.Linear(36864, out_features=out_classes)
-
-    def forward(self, x): 
+    def forward(self, x):
         x = self.sequential(x)
         x = x.reshape(x.shape[0], -1)
-        x = self.mlp(x)
-        return x
+        return self.mlp(x)
 
-
-model = CNN()
-
+model = CNN().to(DEVICE)
 
 tform = transforms.Compose([
-    transforms.RandomRotation(10), 
+    transforms.RandomRotation(10),
     transforms.RandomHorizontalFlip(),
     transforms.RandomVerticalFlip(),
     transforms.ToTensor()
 ])
 
 train_ds = CIFAR10(PATH_DATASETS, train=True, download=True, transform=tform)
-train_ds = Subset(train_ds, range(BATCH_SIZE*200))
-train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE)
+train_ds = Subset(train_ds, range(BATCH_SIZE * 200))
+train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
 prov4ml.log_dataset("train_loader", train_loader)
 
-
 test_ds = CIFAR10(PATH_DATASETS, train=False, download=True, transform=tform)
-test_ds = Subset(test_ds, range(BATCH_SIZE*100))
-test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE)
+test_ds = Subset(test_ds, range(BATCH_SIZE * 100))
+test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False)
 prov4ml.log_dataset("test_loader", test_loader)
 
-optim = torch.optim.Adam(model.parameters(), lr=0.1)
+optim = torch.optim.Adam(model.parameters(), lr=LR)
+loss_fn = nn.CrossEntropyLoss().to(DEVICE)
 
-loss_fn = nn.MSELoss().to(DEVICE)
-
-losses = []
+# ——— Train
 for epoch in range(EPOCHS):
     model.train()
-    for i, (x, y) in enumerate(tqdm(train_loader)):
+    running = 0.0
+    for x, y in tqdm(train_loader, desc=f"Epoch {epoch+1}/{EPOCHS}"):
         x, y = x.to(DEVICE), y.to(DEVICE)
         optim.zero_grad()
-        y_hat = model(x)
-        y = F.one_hot(y, 10).float()
-        loss = loss_fn(y_hat, y)
+        logits = model(x)
+        loss = loss_fn(logits, y)
         loss.backward()
         optim.step()
-        losses.append(loss.item())
+        running += loss.item()
 
-        # log system and carbon metrics (once per epoch), as well as the execution time
-        prov4ml.log_metric("MSE_train", loss.item(), context=prov4ml.Contexts.TRAINING, step=epoch)
-        # prov4ml.log_carbon_metrics(Contexts.TRAINING, step=epoch)
-        prov4ml.log_system_metrics(prov4ml.Contexts.TRAINING, step=epoch)
-    # save incremental model versions
-    prov4ml.save_model_version(f"mnist_model_version", model, prov4ml.Contexts.MODELS, epoch)
+    avg_train = running / max(1, len(train_loader))
+    prov4ml.log_metric("CE_train", avg_train, context=prov4ml.Context.TRAINING, step=epoch)
+    prov4ml.save_model_version("cifar_model_version", model, prov4ml.Context.MODELS, epoch)
 
-
-    
-import matplotlib.pyplot as plt
-plt.plot(losses)
-plt.show()
-
+# ——— Eval
 model.eval()
-avg_loss = 0
-total_correct = 0
-total_samples = 0
-for i, (x, y) in tqdm(enumerate(test_loader)):
-    x, y = x.to(DEVICE), y.to(DEVICE)
-    y_hat = model(x)
-    y2 = F.one_hot(y, 10).float()
-    loss = loss_fn(y_hat, y2)
-    avg_loss += loss.item()  
+val_sum, correct, total = 0.0, 0, 0
+with torch.no_grad():
+    for x, y in tqdm(test_loader, desc="Evaluating"):
+        x, y = x.to(DEVICE), y.to(DEVICE)
+        logits = model(x)
+        loss = loss_fn(logits, y)
+        val_sum += loss.item()
+        pred = logits.argmax(1)
+        correct += (pred == y).sum().item()
+        total += y.size(0)
 
-    _, predicted = torch.max(y2, 1)
-    total_correct += (predicted == y).sum().item() 
-    total_samples += y.size(0)
-    prov4ml.log_metric("MSE_val", loss.item(), prov4ml.Contexts.VALIDATION, step=epoch)
+avg_val = val_sum / max(1, len(test_loader))
+acc = correct / max(1, total)
 
-prov4ml.log_model("mnist_model_final", model, log_model_layers=True, is_input=False)
-            
-avg_loss /= len(test_loader)
-acc = total_correct / total_samples
+prov4ml.log_metric("CE_val", avg_val, context=prov4ml.Context.VALIDATION, step=EPOCHS-1)
+prov4ml.log_metric("ACC_val", acc, context=prov4ml.Context.VALIDATION, step=EPOCHS-1)
+print("— debug: MetricInfo objects —")
+for (mname, ctx), mobj in PROV4ML_DATA.metrics.items():
+    print(mname, str(ctx), "unify_experiments=", getattr(mobj, "unify_experiments", None),
+          "experiment_index=", getattr(mobj, "experiment_index", None))
+prov4ml.log_model("cifar_model_final", model, log_model_layers=True, is_input=False)
 
-print(f"Average loss: {avg_loss:.4f}, Accuracy: {acc:.4f}")
+print(f"Val loss: {avg_val:.4f} | Val acc: {acc:.4f}")
 
-prov4ml.end_run(
-    create_graph=True, 
-    create_svg=True, 
-)
+prov4ml.end_run(create_graph=True, create_svg=True)
