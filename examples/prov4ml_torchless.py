@@ -59,6 +59,7 @@ model.fit(
     ds_train,
     epochs=EPOCHS,
     validation_data=ds_test,
+    callbacks=[prov4ml.MetricLoggingCallback(log_carbon_metrics=False, log_system_metrics=True)], 
 )
 
 prov4ml.end_run(

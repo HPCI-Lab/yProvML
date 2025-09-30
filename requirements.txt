@@ -13,3 +13,6 @@ typing_extensions
 prov
 pydot
 pipreqs
+lxml
+protobuf==3.20
+rdflib
