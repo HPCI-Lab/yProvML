@@ -26,10 +26,11 @@ prov4ml.start_run(
     collect_all_processes=True, 
     disable_codecarbon=True, 
     metrics_file_type=TYPE,
-    use_compressor=COMP
+    use_compressor=COMP, 
+    unify_experiments=False
 )
 
-prov4ml.log_source_code("/Users/gabrielepadovani/Desktop/Università/Prov/yProvML/examples/prov4ml_torch.py")
+prov4ml.log_source_code("./examples/prov4ml_torch.py")
 prov4ml.log_execution_command(cmd="python", path="prov4ml_torch.py")
 
 prov4ml.create_context("TRAINING_LOD2", prov4ml.Context.TRAINING)

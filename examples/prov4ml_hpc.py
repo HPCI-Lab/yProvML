@@ -37,6 +37,12 @@ def run_job(proc):
         collect_all_processes=True
     )
 
+    prov4ml.log_source_code("./examples/prov4ml_hpc.py")
+    prov4ml.log_execution_command(cmd="python", path="prov4ml_hpc.py")
+
+    prov4ml.create_context("TRAINING_LOD2", prov4ml.Context.TRAINING)
+    prov4ml.create_context("TRAINING_LOD3", prov4ml.Context.TRAINING_LOD2)
+
     class MNISTModel(nn.Module):
         def __init__(self):
             super().__init__()
@@ -60,12 +66,12 @@ def run_job(proc):
     train_ds = MNIST(PATH_DATASETS, train=True, download=True, transform=tform)
     train_ds = Subset(train_ds, range(100))
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE)
-    prov4ml.log_dataset(train_loader, "train_dataset")
+    prov4ml.log_dataset("train_dataset", train_loader)
 
     test_ds = MNIST(PATH_DATASETS, train=False, download=True, transform=tform)
     test_ds = Subset(test_ds, range(10))
     test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE)
-    prov4ml.log_dataset(test_loader, "val_dataset")
+    prov4ml.log_dataset("val_dataset", test_loader)
 
     optim = torch.optim.Adam(mnist_model.parameters(), lr=0.001)
     # prov4ml.log_param("optimizer", "Adam")
@@ -86,9 +92,11 @@ def run_job(proc):
             optim.step()
             losses.append(loss.item())
         
-            prov4ml.log_metric("Loss", loss.item(), context=prov4ml.Contexts.TRAINING, step=epoch)
+            prov4ml.log_metric("Loss", loss.item(), context=prov4ml.Context.TRAINING, step=epoch)
             # prov4ml.log_carbon_metrics(prov4ml.Context.TRAINING, step=epoch)
-            prov4ml.log_system_metrics(prov4ml.Contexts.TRAINING, step=epoch)
+            prov4ml.log_system_metrics(prov4ml.Context.TRAINING, step=epoch)
+        prov4ml.save_model_version(f"mnist_model_version", mnist_model, prov4ml.Context.MODELS, epoch)
+
 
         mnist_model.eval()
         for i, (x, y) in tqdm(enumerate(test_loader)):
@@ -97,9 +105,9 @@ def run_job(proc):
             y2 = F.one_hot(y, 10).float()
             loss = loss_fn(y_hat, y2)
 
-            prov4ml.log_metric("Loss", loss.item(), prov4ml.Contexts.VALIDATION, step=epoch)
+            prov4ml.log_metric("Loss", loss.item(), prov4ml.Context.VALIDATION, step=epoch)
 
-    prov4ml.log_model(mnist_model, "mnist_model_final")
+    prov4ml.log_model("mnist_model_final", mnist_model)
     prov4ml.end_run(create_graph=True, create_svg=True)
 
 
