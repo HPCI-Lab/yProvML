@@ -18,5 +18,4 @@
     - [Usage with PyTorch](./usage_pytorch.md)
     - [Usage with Lightning](./usage_lightning.md)
     - [Usage with ItwinAI Logger](./usage_itwinAI_logger.md)
-    - [Viewing Data](./prov_getters_example.md)
     - [Reproducible Example](./reproducible_example.md)

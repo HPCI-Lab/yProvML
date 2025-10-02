@@ -12,9 +12,9 @@ It allows users to create provenance graphs from the logged information, and sav
 
 ## Example
 
-![Example](./assets/example.svg)
+![Example](./assets/prov_HCS-BA_small.pdf)
 
-The image shown above has been generated from the [example](./examples/mlflow_lightning.py) program provided in the ```example``` directory.
+The image shown above has been generated through one of the yProv4ML use cases. Several examples are present in the [examples](./examples.md) section and provided in the ```example``` directory on [GitHub](https://github.com/HPCI-Lab/yProvML).
 
 ## Metrics Visualization
 
@@ -24,9 +24,9 @@ The image shown above has been generated from the [example](./examples/mlflow_li
 
 ## Experiments and Runs
 
-An experiment is a collection of runs. Each run is a single execution of a machine learning model. 
+An experiment is a collection of runs where each run is a single execution of a python script. 
 By changing the ```experiment_name``` parameter in the ```start_run``` function, the user can create a new experiment. 
-All artifacts and metrics logged during the execution of the experiment will be saved in the directory specified by the experiment ID. 
+All artifacts and metrics logged during the execution of the experiment will be saved in the directory specified by the experiment ID. Additionally, a global rank (GR) parameter is tracked, to enable the library to save data in multi-process environments.  
 
 Several runs can be executed in the same experiment. All runs will be saved in the same directory (according to the specific experiment name and ID).
 
@@ -37,6 +37,7 @@ Several runs can be executed in the same experiment. All runs will be saved in t
 
 # Former Contributors
 - [Luca Davi](https://github.com/lucadavii)
+- [Michael Vaccari]()
 
 <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
     <a href="." style="text-decoration: none; background-color: #006269; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold; transition: 0.3s;">← Prev</a>

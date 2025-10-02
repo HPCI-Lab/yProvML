@@ -1,5 +1,5 @@
 
-# Provenance Collection Creation
+# Provenance Collection Creation (Clustering)
 
 <div style="display: flex; align-items: center; background-color: #cc3300; color: #333; border: 5px solid #cc3300; font-weight: bold; border-radius: 5px; position: relative;">
     <span style="position: absolute; left: 10px; font-size: 20px;">‼</span>

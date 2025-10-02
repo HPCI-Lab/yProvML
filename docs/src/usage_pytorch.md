@@ -26,6 +26,8 @@ PATH_DATASETS = "./data"
 BATCH_SIZE = 32
 EPOCHS = 15
 DEVICE = "cpu"
+TYPE = prov4ml.MetricsType.ZARR
+COMP = False
 
 # Start a new provenance logging run. 
 # Specify the user namespace, experiment name, 
@@ -33,9 +35,14 @@ DEVICE = "cpu"
 # The graph is saved every 100 logs.
 prov4ml.start_run(
     prov_user_namespace="www.example.org",
-    experiment_name="experiment_name", 
+    experiment_name=f"{TYPE}_{COMP}", 
     provenance_save_dir="prov",
     save_after_n_logs=100,
+    collect_all_processes=True, 
+    disable_codecarbon=True, 
+    metrics_file_type=TYPE,
+    use_compressor=COMP, 
+    unify_experiments=False
 )
 
 class MNISTModel(nn.Module):
@@ -62,12 +69,12 @@ prov4ml.log_param("dataset transformation", tform)
 train_ds = MNIST(PATH_DATASETS, train=True, download=True, transform=tform)
 train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE)
 # Log metadata about the training dataset (e.g., source, size, structure).
-prov4ml.log_dataset(train_loader, "train_dataset")
+prov4ml.log_dataset("train_dataset", train_loader)
 
 test_ds = MNIST(PATH_DATASETS, train=False, download=True, transform=tform)
 test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE)
 # Log metadata about the validation dataset.
-prov4ml.log_dataset(test_loader, "val_dataset")
+prov4ml.log_dataset("val_dataset", test_loader)
 
 optim = torch.optim.Adam(mnist_model.parameters(), lr=0.001)
 # Log the optimizer type used in training. 
@@ -100,7 +107,7 @@ for epoch in range(EPOCHS):
         prov4ml.log_system_metrics(prov4ml.Context.TRAINING, step=epoch)
     # Save the current version of the model with a label and with Context TRAINING.
     # The model weights are saved incrementally in the experiment directory 
-    prov4ml.save_model_version(mnist_model, "mnist_model_version",prov4ml.Context.TRAINING)
+    prov4ml.save_model_version("mnist_model_version", mnist_model, prov4ml.Context.TRAINING)
     
     mnist_model.eval()
     for i, (x, y) in tqdm(enumerate(test_loader)):
@@ -115,11 +122,11 @@ for epoch in range(EPOCHS):
 
 # Log the final trained model under a given name. 
 # This allows later retrieval, sharing, or deployment of the model.
-prov4ml.log_model(mnist_model, "mnist_model_final")
+prov4ml.log_model("mnist_model_final", mnist_model)
 # Ends the current run and finalizes provenance logging. 
 # If `create_graph` is True, it generates a complete provenance graph.
 # If `create_svg` is True, an SVG visualization of the graph is also created.
-prov4ml.end_run(create_graph=True, create_svg=True)
+prov4ml.end_run(create_graph=True, create_svg=True, create_rocrate=True)
 
 ```
 

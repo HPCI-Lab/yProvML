@@ -17,9 +17,9 @@ from prov4ml.constants import PROV4ML_DATA, VERBOSE
 def log_metric(
         key: str, 
         value: float, 
-        context:Context, 
+        context: Optional[Context] = None, 
         step: Optional[int] = 0, 
-        source: LoggingItemKind = None, 
+        source: Optional[LoggingItemKind] = None, 
     ) -> None:
     """
     Logs a metric with the specified key, value, and context.
@@ -34,7 +34,7 @@ def log_metric(
     Returns:
         None
     """
-    PROV4ML_DATA.add_metric(key,value,step, context=context, source=source)
+    PROV4ML_DATA.add_metric(key, value, step, context=context, source=source)
 
 def log_execution_start_time() -> None:
     """Logs the start time of the current execution. """
@@ -313,7 +313,11 @@ def save_model_version(
         torch.save(model.state_dict(), f"{path}/{model_name}.pth")
         return log_artifact(model_name, f"{path}/{model_name}.pth", context=context, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=is_input)
 
-def log_dataset(dataset_label : str, dataset : Union[DataLoader, Subset, Dataset]): 
+def log_dataset(
+        dataset_label : str, 
+        dataset : Union[DataLoader, Subset, Dataset], 
+        log_dataset_info : bool = True, 
+        ): 
     """
     Logs dataset statistics such as total samples and total steps.
 
@@ -326,8 +330,10 @@ def log_dataset(dataset_label : str, dataset : Union[DataLoader, Subset, Dataset
     """
 
     e = log_artifact(f"{dataset_label}", "", context=Context.DATASETS, log_copy_in_prov_directory=False, is_model=False, is_input=True)
-    e.add_attributes({f"{dataset_label}_stat_total_samples": len(dataset)})
+    
+    if not log_dataset_info: return
 
+    e.add_attributes({f"{dataset_label}_stat_total_samples": len(dataset)})
     # handle datasets from DataLoader
     if isinstance(dataset, DataLoader):
         dl = dataset

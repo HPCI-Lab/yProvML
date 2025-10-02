@@ -218,14 +218,14 @@ class Prov4MLData:
         self, 
         metric: str, 
         value: Any, 
-        step: int, 
+        step: Optional[int] = None, 
         context: Optional[Any] = None, 
         source: Optional[LoggingItemKind] = None, 
     ) -> None:
         if not self.is_collecting: return
 
-        if context is None: 
-            context = self.EXPERIMENT_NAME
+        if context is None: context = self.EXPERIMENT_NAME
+        if step is None: step = 0
 
         if (metric, context) not in self.metrics:
             self.metrics[(metric, context)] = MetricInfo(metric, context, source=source, use_compressor=self.use_compressor)

@@ -87,9 +87,9 @@ class MNISTModel(LightningModule):
         # All standard prov4ml directives work the same way as before, 
         # the whole context is set up by the logger.
         prov4ml.log_metric("epoch", self.current_epoch, prov4ml.Context.TRAINING, step=self.current_epoch)
-        prov4ml.save_model_version(self, f"model_version_{self.current_epoch}", prov4ml.Context.TRAINING, step=self.current_epoch)
-        prov4ml.log_system_metrics(prov4ml.Context.TRAINING,step=self.current_epoch)
-        prov4ml.log_carbon_metrics(prov4ml.Context.TRAINING,step=self.current_epoch)
+        prov4ml.save_model_version(f"model_version_{self.current_epoch}", self, prov4ml.Context.TRAINING, step=self.current_epoch)
+        prov4ml.log_system_metrics(prov4ml.Context.TRAINING, step=self.current_epoch)
+        prov4ml.log_carbon_metrics(prov4ml.Context.TRAINING, step=self.current_epoch)
         prov4ml.log_current_execution_time("train_epoch_time", prov4ml.Context.TRAINING, self.current_epoch)
 
     def configure_optimizers(self):
@@ -117,11 +117,11 @@ train_ds = Subset(train_ds, range(BATCH_SIZE * 10))
 train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE)
 val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE)
 
-prov4ml.log_dataset(train_loader, "train_dataset")
-prov4ml.log_dataset(val_loader, "val_dataset")
+prov4ml.log_dataset("train_dataset", train_loader)
+prov4ml.log_dataset("val_dataset", val_loader)
 
 trainer = L.Trainer(
-    accelerator="mps",
+    accelerator="cuda",
     devices=1,
     max_epochs=EPOCHS,
     # The logger has to be added to the corresponding parameter in pytorch lightning
@@ -131,13 +131,13 @@ trainer = L.Trainer(
 )
 
 trainer.fit(mnist_model, train_loader, val_dataloaders=val_loader)
-prov4ml.log_model(mnist_model, "model_version_final")
+prov4ml.log_model("model_version_final", mnist_model)
 
 test_ds = MNIST(PATH_DATASETS, train=False, download=True, transform=tform)
 test_ds = Subset(test_ds, range(BATCH_SIZE * 2))
 test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE)
 
-prov4ml.log_dataset(test_loader, "test_dataset")
+prov4ml.log_dataset("test_dataset", test_loader)
 
 result = trainer.test(mnist_model, test_loader)
 ```

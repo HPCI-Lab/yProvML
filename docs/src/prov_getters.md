@@ -1,11 +1,11 @@
 # Get Data from Provenance Files
 
-yProv4ml offers a set of directives to easilyy extract the information logged from the provenance.json file. 
+yProv4ml offers a set of directives to easily extract the information logged from the provenance.json file. 
 
 <div style="display: flex; align-items: center; background-color: #ffcc00; color: #333; border: 5px solid #ffcc00; font-weight: bold; border-radius: 5px; position: relative;">
     <span style="position: absolute; left: 10px; font-size: 20px;">⚠</span>
     <span style="margin-left: 55px; padding: 5px; background-color: white; border-radius: 5px; width:100%">
-    All these functions expect the data to be passed to be a pandas.DataFrame. When using a provenance json file coming from yProv4ML, this can be easily obtained following the example below. 
+    All these functions expect the data to be passed to be a dictionary (json file opened in python). When using a provenance json file coming from yProv4ML, this can be easily obtained following the example below. 
     </span>
 </div>
 
@@ -25,7 +25,7 @@ data = json.load(open(path_to_prov_json))
 ### Utility Functions
 
 ```python 
-def get_metrics(data : pd.DataFrame, keyword : Optional[str] = None) -> List[str]
+def get_metrics(data : dict, keyword : Optional[str] = None) -> List[str]
 ```
 
 The `get_metrics` function retrieves all available metrics from the provided provjson file. If a keyword is specified, it filters the results to include only metrics that match the keyword.
@@ -35,7 +35,7 @@ The `get_metrics` function retrieves all available metrics from the provided pro
 | `data`          | `pd.DataFrame`      | Required     | The dataset containing metrics. |
 | `keyword`       | `Optional[str]`     | `None`       | If provided, filters the metrics to only those containing this keyword. |
 
-```python 
+<!-- ```python 
 def get_metric(
     data : pd.DataFrame, 
     metric : str, 
@@ -66,17 +66,17 @@ The `get_metric` function extracts a specific metric from the dataset, with addi
 The return value for this function is a dataframe containing the following columns: 
 - `value`: contains the metric items 
 - `epoch`: contains the corresponding epochs
-- `time`: contains the corresponding time steps
+- `time`: contains the corresponding time steps -->
 
 ```python 
-def get_param(data : pd.DataFrame, param : str) -> Any
+def get_param(data : dict, param : str) -> Any
 ```
 
 Retrieves a single value corresponding to the given param.
 This function is useful when the parameter is expected to have a unique value and the label exactly matches in the prov json file.
 
 ```python 
-def get_params(data : pd.DataFrame, param : str) -> List[Any]
+def get_params(data : dict, param : str) -> List[Any]
 ```
 
 Retrieves a list of values for the given param.
@@ -87,15 +87,23 @@ This is useful when multiple values exist for the parameter (for example when ma
 | `data`    | `pd.DataFrame` | - | The dataset containing parameters. |
 | `param`   | `str`         | - | The specific parameter to retrieve. |
 
-Let me know if you need further clarification! 🚀
-
-More utility functions are also available: 
+<!-- More utility functions are also available: 
 
 ```python 
 def get_avg_metric(data, metric) -> pd.DataFrame: ...
 def get_sum_metric(data, metric) -> pd.DataFrame: ...
 def get_metric_time(data, metric, time_in_sec=False) -> pd.DataFrame: ...
-```
+``` -->
+
+
+<div style="display: flex; align-items: center; background-color: #ffcc00; color: #333; border: 5px solid #ffcc00; font-weight: bold; border-radius: 5px; position: relative;">
+    <span style="position: absolute; left: 10px; font-size: 20px;">⚠</span>
+    <span style="margin-left: 55px; padding: 5px; background-color: white; border-radius: 5px; width:100%">
+    Viewing metrics data depends on the way it is saved in the experiment. 
+    - If CSV format is used, we suggest opening it with [pandas](https://pandas.pydata.org/)
+    - If ZARR or NETCDF are used, then either [xarray](https://docs.xarray.dev/en/stable/index.html) or an ad-hoc library ([zarr-python](https://zarr.readthedocs.io/en/stable/) and [netcdf4](https://pypi.org/project/netCDF4/)) can be used. 
+    </span>
+</div>
 
 
 <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">

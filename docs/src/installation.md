@@ -2,7 +2,7 @@
 
 # Pre-Requisites 🔧
 
-The creation of dot files and svg images for the library is handled through the [GraphViz](https://graphviz.org/) suite. For everything to correctly work, this module has to be installed correctly. 
+The creation of dot files and svg images for the library is handled through the [GraphViz](https://graphviz.org/) suite. For everything to correctly work, this module has to be installed. 
 We reference both the [installation section on their docs](https://graphviz.org/download/), as well as the main ways to install it. 
 
 ### Linux
@@ -25,6 +25,14 @@ brew install graphviz
 Installers are at the [Download page of GraphViz](https://graphviz.org/download/). 
 
 # Installation 👷‍♂️
+
+Install from pip: 
+```bash
+pip install yprov4ml
+
+# Or for the legacy version
+pip install 'yprov4ml==1.0'
+```
 
 Install from the repository:
 

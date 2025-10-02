@@ -11,8 +11,8 @@ from prov4ml.datamodel.metric_type import MetricsType
 from prov4ml.datamodel.compressor_type import CompressorType
 
 def start_run(
-        prov_user_namespace: str,
         experiment_name: str,
+        prov_user_namespace: Optional[str] = None,
         provenance_save_dir: Optional[str] = None,
         collect_all_processes: Optional[bool] = False,
         save_after_n_logs: Optional[int] = 100,

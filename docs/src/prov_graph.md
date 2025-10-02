@@ -26,8 +26,6 @@ Or alternatively, using directly the Graphviz suite:
 dot -Tsvg -O prov_graph.dot
 ```
 
-
-
 <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
     <a href="setup.md" style="text-decoration: none; background-color: #006269; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold; transition: 0.3s;">← Prev</a>
     <a href="." style="text-decoration: none; background-color: #006269; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold; transition: 0.3s;">🏠 Home</a>
