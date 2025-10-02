@@ -5,7 +5,7 @@ from torch import nan
 #############################
 
 import pandas as pd
-from prov4ml.utils.time_utils import timestamp_to_seconds
+from yprov4ml.utils.time_utils import timestamp_to_seconds
 from typing import Optional
 
 def get_metrics(data, keyword=None):

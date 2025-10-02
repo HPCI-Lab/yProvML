@@ -4,7 +4,7 @@ import torch
 import sys
 import warnings
 
-from prov4ml.constants import VERBOSE
+from yprov4ml.constants import VERBOSE
 
 if sys.platform != 'darwin':
     import GPUtil

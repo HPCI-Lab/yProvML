@@ -6,8 +6,8 @@ import prov.model as prov
 from rocrate.rocrate import ROCrate
 from pathlib import Path
 
-from prov4ml.constants import PROV4ML_DATA
-from prov4ml.datamodel.metric_type import get_file_type
+from yprov4ml.constants import PROV4ML_DATA
+from yprov4ml.datamodel.metric_type import get_file_type
 
 def create_prov_document() -> prov.ProvDocument:
     

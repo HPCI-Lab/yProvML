@@ -9,10 +9,10 @@ import prov.model as prov
 from torch.utils.data import DataLoader, Subset, Dataset, RandomSampler
 from typing import Any, Optional, Union
 
-from prov4ml.datamodel.attribute_type import LoggingItemKind
-from prov4ml.utils import energy_utils, flops_utils, system_utils, time_utils, funcs
-from prov4ml.datamodel.context import Context
-from prov4ml.constants import PROV4ML_DATA, VERBOSE
+from yprov4ml.datamodel.attribute_type import LoggingItemKind
+from yprov4ml.utils import energy_utils, flops_utils, system_utils, time_utils, funcs
+from yprov4ml.datamodel.context import Context
+from yprov4ml.constants import PROV4ML_DATA, VERBOSE
     
 def log_metric(
         key: str, 

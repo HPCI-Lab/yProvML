@@ -9,14 +9,14 @@ from tqdm import tqdm
 import sys
 sys.path.append("../yProvML")
 
-import prov4ml
+import yprov4ml
 
 PATH_DATASETS = "./data"
 BATCH_SIZE = 32
 EPOCHS = 5
 
 # start the run in the same way as with mlflow
-logger = prov4ml.ProvMLItwinAILogger(
+logger = yprov4ml.ProvMLItwinAILogger(
     prov_user_namespace="www.example.org",
     experiment_name="experiment_name",
     provenance_save_dir="prov",
@@ -71,18 +71,18 @@ for epoch in tqdm(range(EPOCHS)):
         loss.backward()
         optim.step()
         # prov4ml.log_metric("MSE_train", loss, context=prov4ml.Context.TRAINING, step=epoch)
-        logger.log(item=loss.item(), identifier="MSE_train", kind="metric", context=prov4ml.Contexts.TRAINING, step=epoch)
+        logger.log(item=loss.item(), identifier="MSE_train", kind="metric", context=yprov4ml.Contexts.TRAINING, step=epoch)
     
     # log system and carbon metrics (once per epoch), as well as the execution time
     # prov4ml.log_carbon_metrics(prov4ml.Context.TRAINING, step=epoch)
-    logger.log(item=epoch, identifier="epoch", kind="carbon", context=prov4ml.Contexts.TRAINING, step=epoch)
+    logger.log(item=epoch, identifier="epoch", kind="carbon", context=yprov4ml.Contexts.TRAINING, step=epoch)
     # prov4ml.log_system_metrics(prov4ml.Context.TRAINING, step=epoch)
-    logger.log(item=epoch, identifier="epoch", kind="system", context=prov4ml.Contexts.TRAINING, step=epoch)
+    logger.log(item=epoch, identifier="epoch", kind="system", context=yprov4ml.Contexts.TRAINING, step=epoch)
 
 
     # save incremental model versions
     # prov4ml.save_model_version(mnist_model, f"mnist_model_version_{epoch}", prov4ml.Context.TRAINING, epoch)
-    logger.log(item=mnist_model, identifier=f"mnist_model_version", kind="model", context=prov4ml.Contexts.TRAINING, step=epoch)
+    logger.log(item=mnist_model, identifier=f"mnist_model_version", kind="model", context=yprov4ml.Contexts.TRAINING, step=epoch)
 
 
 for i, (x, y) in tqdm(enumerate(test_loader)):
@@ -90,7 +90,7 @@ for i, (x, y) in tqdm(enumerate(test_loader)):
     loss = F.cross_entropy(y_hat, y)
     # change the context to EVALUATION to log the metric as evaluation metric
     # prov4ml.log_metric("MSE_test", loss, prov4ml.Context.EVALUATION, step=epoch)
-    logger.log(item=loss.item(), identifier="MSE_test", kind="metric", context=prov4ml.Contexts.TESTING, step=epoch)
+    logger.log(item=loss.item(), identifier="MSE_test", kind="metric", context=yprov4ml.Contexts.TESTING, step=epoch)
 
 # log final version of the model 
 # it also logs the model architecture as an artifact by default

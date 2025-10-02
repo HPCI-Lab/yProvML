@@ -4,7 +4,7 @@ geocoder
 gpustat
 GPUtil
 lightning
-netCDF4
+netCDF4==1.7.2
 numpy
 nvitop
 pandas
@@ -17,7 +17,7 @@ typing_extensions
 rocrate
 aenum
 prov
-zarr
+zarr==3.1.3
 lxml
 rdflib
 nvidia-ml-py

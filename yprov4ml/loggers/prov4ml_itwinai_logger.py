@@ -3,9 +3,9 @@ from typing import Any, Dict, Optional, Union
 from typing_extensions import override
 from typing import List, Tuple, Literal
 
-from prov4ml.logging_aux import *
-from prov4ml.loggers.itwinai_logger import Logger
-from prov4ml import *
+from yprov4ml.logging_aux import *
+from yprov4ml.loggers.itwinai_logger import Logger
+from yprov4ml.yprov4ml import *
 
 class ProvMLItwinAILogger(Logger):
     """

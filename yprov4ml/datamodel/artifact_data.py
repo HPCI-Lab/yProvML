@@ -1,7 +1,7 @@
 
 from typing import Any, Optional
 
-from prov4ml.utils.funcs import get_current_time_millis
+from yprov4ml.utils.funcs import get_current_time_millis
 
 class ArtifactInfo:
     """

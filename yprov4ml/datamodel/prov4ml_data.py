@@ -11,15 +11,15 @@ import warnings
 from aenum import extend_enum
 import subprocess
 
-from prov4ml.datamodel.artifact_data import ArtifactInfo
-from prov4ml.datamodel.attribute_type import LoggingItemKind
-from prov4ml.datamodel.metric_data import MetricInfo
-from prov4ml.datamodel.context import Context
-from prov4ml.datamodel.metric_type import MetricsType
-from prov4ml.datamodel.compressor_type import CompressorType, COMPRESSORS_FOR_ZARR
-from prov4ml.utils import funcs
-from prov4ml.utils.prov_utils import get_activity, create_activity
-from prov4ml.utils.funcs import get_global_rank, get_runtime_type
+from yprov4ml.datamodel.artifact_data import ArtifactInfo
+from yprov4ml.datamodel.attribute_type import LoggingItemKind
+from yprov4ml.datamodel.metric_data import MetricInfo
+from yprov4ml.datamodel.context import Context
+from yprov4ml.datamodel.metric_type import MetricsType
+from yprov4ml.datamodel.compressor_type import CompressorType, COMPRESSORS_FOR_ZARR
+from yprov4ml.utils import funcs
+from yprov4ml.utils.prov_utils import get_activity, create_activity
+from yprov4ml.utils.funcs import get_global_rank, get_runtime_type
 
 class Prov4MLData:
     def __init__(self) -> None:

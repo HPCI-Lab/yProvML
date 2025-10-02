@@ -5,8 +5,8 @@ from typing_extensions import override
 from argparse import Namespace
 from torch import Tensor
 
-from prov4ml.logging_aux import log_param, log_metric
-from prov4ml.datamodel.context import Context
+from yprov4ml.logging_aux import log_param, log_metric
+from yprov4ml.datamodel.context import Context
 
 class ProvMLLogger(Logger):
     def __init__(

@@ -4,7 +4,7 @@ import argparse
 from prov.model import ProvDocument
 from typing import Optional
 
-from prov4ml.utils.file_utils import custom_prov_to_dot
+from yprov4ml.utils.file_utils import custom_prov_to_dot
 
 def main(prov_file : str, out_file : Optional[str]): 
     if not prov_file.endswith(".json"): 

@@ -6,9 +6,9 @@ import zarr
 import netCDF4 as nc
 import zarr.codecs
 
-from prov4ml.datamodel.attribute_type import LoggingItemKind
-from prov4ml.datamodel.compressor_type import CompressorType, compressor_to_type
-from prov4ml.datamodel.metric_type import MetricsType, get_file_type
+from yprov4ml.datamodel.attribute_type import LoggingItemKind
+from yprov4ml.datamodel.compressor_type import CompressorType, compressor_to_type
+from yprov4ml.datamodel.metric_type import MetricsType, get_file_type
 
 ZARR_CHUNK_SIZE = 1000
 
