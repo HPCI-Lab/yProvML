@@ -1,6 +1,7 @@
 
 import os
 import sys
+import time
 import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -88,17 +89,23 @@ class Prov4MLData:
         self.PROV_JSON_NAME = f"{self.PROV_JSON_NAME}_{self.RUN_ID}"
 
         self.EXPERIMENT_DIR = os.path.join(self.PROV_SAVE_PATH, f"{self.CLEAN_EXPERIMENT_NAME}_{self.RUN_ID}")
-        self.ARTIFACTS_DIR = os.path.join(self.EXPERIMENT_DIR, "artifacts")
-        self.METRIC_DIR = os.path.join(self.EXPERIMENT_DIR, "metrics")
-        os.makedirs(self.EXPERIMENT_DIR)
-        os.makedirs(self.ARTIFACTS_DIR)
-        os.makedirs(self.METRIC_DIR)
+        self.ARTIFACTS_DIR = os.path.join(self.EXPERIMENT_DIR, f"artifacts_GR{self.global_rank}")
+        self.METRIC_DIR = os.path.join(self.EXPERIMENT_DIR, f"metrics_GR{self.global_rank}")
 
         self.metrics_file_type = metrics_file_type
         self.use_compressor = use_compressor
         self.csv_separator = csv_separator
 
         self._init_root_context()
+
+        # necessary when spawning threads, 
+        # otherwise they get counted as different runs
+        # TODO: find better approach
+        time.sleep(1)
+        os.makedirs(self.EXPERIMENT_DIR, exist_ok=True)
+        os.makedirs(self.ARTIFACTS_DIR, exist_ok=True)
+        os.makedirs(self.METRIC_DIR, exist_ok=True)
+
 
     def _add_ctx(self, rootContext, ctx):
         c = self.root_provenance_doc.activity("context:"+ str(ctx))

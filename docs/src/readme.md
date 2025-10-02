@@ -1,11 +1,4 @@
-
-<table align="center">
-  <tr>
-    <td><img src="./assets/HPCI-Lab.png" alt="HPCI Lab Logo" width="100"></td>
-    <td><h1>yProv4ML</h1></td>
-  </tr>
-</table>
-
+# yProv4ML
 
 [![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)](https://opensource.org/licenses/)
 
@@ -27,7 +20,7 @@ The image shown above has been generated from the [example](./examples/mlflow_li
 
 ![Loss and GPU Usage](./assets/System_Metrics.png)
 
-![Emission Rate](assets/Emission_Rate.png) 
+![Emission Rate](./assets/Emission_Rate.png) 
 
 ## Experiments and Runs
 
@@ -37,12 +30,16 @@ All artifacts and metrics logged during the execution of the experiment will be 
 
 Several runs can be executed in the same experiment. All runs will be saved in the same directory (according to the specific experiment name and ID).
 
-# Documentation
-
-For detailed information, please refer to the [Documentation](https://hpci-lab.github.io/yProvML/)
-
 # Contributors
 
 - [Gabriele Padovani](https://github.com/lelepado01)
-- [Luca Davi](https://github.com/lucadavii)
 - [Sandro Luigi Fiore](https://github.com/sandrofioretn)
+
+# Former Contributors
+- [Luca Davi](https://github.com/lucadavii)
+
+<div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+    <a href="." style="text-decoration: none; background-color: #006269; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold; transition: 0.3s;">← Prev</a>
+    <a href="." style="text-decoration: none; background-color: #006269; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold; transition: 0.3s;">🏠 Home</a>
+    <a href="installation.md" style="text-decoration: none; background-color: #006269; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold; transition: 0.3s;">Next →</a>
+</div>

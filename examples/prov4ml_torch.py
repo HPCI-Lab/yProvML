@@ -29,7 +29,7 @@ prov4ml.start_run(
     use_compressor=COMP, 
 )
 
-prov4ml.log_source_code("/Users/gabrielepadovani/Desktop/Università/Prov/yProvML/examples/prov4ml_torch.py")
+prov4ml.log_source_code("./examples/prov4ml_torch.py")
 prov4ml.log_execution_command(cmd="python", path="prov4ml_torch.py")
 
 prov4ml.create_context("TRAINING_LOD2", prov4ml.Context.TRAINING)
