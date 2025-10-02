@@ -19,7 +19,7 @@ It allows users to create provenance graphs from the logged information, and sav
 
 ## Example
 
-![Example](./assets/example.svg)
+![Example](./assets/example.pdf)
 
 The image shown above has been generated from the [example](./examples/mlflow_lightning.py) program provided in the ```example``` directory.
 
