@@ -12,7 +12,7 @@ It allows users to create provenance graphs from the logged information, and sav
 
 ## Example
 
-![Example](./assets/prov_HCS-BA_small.pdf)
+![Example](./assets/prov_HCS-BA_small.png)
 
 The image shown above has been generated through one of the yProv4ML use cases. Several examples are present in the [examples](./examples.md) section and provided in the ```example``` directory on [GitHub](https://github.com/HPCI-Lab/yProvML).
 
