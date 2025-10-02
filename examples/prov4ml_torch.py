@@ -27,7 +27,6 @@ prov4ml.start_run(
     disable_codecarbon=True, 
     metrics_file_type=TYPE,
     use_compressor=COMP, 
-    unify_experiments=False
 )
 
 prov4ml.log_source_code("./examples/prov4ml_torch.py")

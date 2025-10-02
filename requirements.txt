@@ -20,3 +20,4 @@ prov
 zarr
 lxml
 rdflib
+nvidia-ml-py
