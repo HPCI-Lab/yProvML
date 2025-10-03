@@ -4,11 +4,11 @@ import tensorflow_datasets as tfds
 
 import sys
 sys.path.append("./")
-import prov4ml
+import yprov4ml
 
-prov4ml.start_run(
-    prov_user_namespace="prova", 
+yprov4ml.start_run(
     experiment_name="torchless_run", 
+    prov_user_namespace="www.example.org", 
     provenance_save_dir="prov", 
     collect_all_processes=False, 
     save_after_n_logs=100
@@ -22,8 +22,8 @@ prov4ml.start_run(
     with_info=True,
 )
 
-prov4ml.log_dataset(ds_train, "ds_train")
-prov4ml.log_dataset(ds_test, "ds_test")
+yprov4ml.log_dataset("ds_train", ds_train)
+yprov4ml.log_dataset("ds_test", ds_test)
 
 def normalize_img(image, label):
     """Normalizes images: `uint8` -> `float32`."""
@@ -50,19 +50,20 @@ model.compile(
     loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
     metrics=[tf.keras.metrics.SparseCategoricalAccuracy()],
 )
-prov4ml.log_model(model, "model_Sequential")
+yprov4ml.log_model("model_Sequential", model)
 
 EPOCHS = 6
-prov4ml.log_param("num_epochs", EPOCHS)
+yprov4ml.log_param("num_epochs", EPOCHS)
 
 model.fit(
     ds_train,
     epochs=EPOCHS,
     validation_data=ds_test,
-    callbacks=[prov4ml.MetricLoggingCallback(log_carbon_metrics=False, log_system_metrics=True)], 
+    callbacks=[yprov4ml.MetricLoggingCallback(log_carbon_metrics=False, log_system_metrics=True)], 
 )
 
-prov4ml.end_run(
+yprov4ml.end_run(
     create_graph=True, 
     create_svg=True, 
+    crate_ro_crate=True
 )

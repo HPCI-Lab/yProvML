@@ -1,0 +1,58 @@
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = [
+    "yprov4ml*"
+]
+
+[project]
+name = "yprov4ml"
+version = "2.0.0"
+authors = [
+  { name="Gabriele Padovani", email="gabriele.padovani@unitn.it" },
+]
+description = "Part of the yProv suite, and provides a unified interface for logging and tracking provenance information in machine learning experiments, both on distributed as well as large scale experiments."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = {file = "LICENSE"}
+dependencies = [
+    "codecarbon >= 2.8",
+    "fvcore",
+    "geocoder",
+    "gpustat",
+    "GPUtil",
+    "lightning",
+    "netCDF4",
+    "numpy",
+    "nvitop",
+    "pandas",
+    "psutil",
+    "pydot",
+    "torch",
+    "torchvision",
+    "tqdm",
+    "typing_extensions",
+    "rocrate",
+    "aenum",
+    "prov",
+    "zarr",
+    "lxml",
+    "rdflib < 7",
+    "nvidia-ml-py",
+]
+
+[project.optional-dependencies]
+apple = ["apple_gpu == 0.3.*"]
+amd = ["pyamdgpuinfo == 2.1.*"]
+nvidia = ["nvitop == 1.3.*"]
+
+[project.urls]
+Homepage = "https://github.com/HPCI-Lab/yProvML"
+Issues = "https://github.com/HPCI-Lab/yProvML/issues"

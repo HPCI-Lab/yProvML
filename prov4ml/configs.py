@@ -1,2 +1,0 @@
-
-SILENT = False
