@@ -20,3 +20,5 @@ prov
 zarr
 lxml
 rdflib
+plotly
+sklearn
