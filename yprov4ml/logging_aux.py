@@ -278,6 +278,9 @@ def log_dataset(
 
     d = {}
 
+    if isinstance(dataset, (types.GeneratorType, map, filter)): 
+        dataset = tf.data.Dataset.from_generator(dataset)
+
     batched = isinstance(dataset.element_spec, tuple) or isinstance(dataset.element_spec, dict)
 
     try:
