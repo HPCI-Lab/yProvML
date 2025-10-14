@@ -4,6 +4,8 @@ import prov.model as prov
 import tensorflow as tf
 import keras
 from typing import Any, Optional
+import types
+import math
 
 from yprov4ml.datamodel.attribute_type import LoggingItemKind
 from yprov4ml.utils import energy_utils, system_utils, time_utils, funcs
@@ -279,26 +281,35 @@ def log_dataset(
     d = {}
 
     if isinstance(dataset, (types.GeneratorType, map, filter)): 
-        dataset = tf.data.Dataset.from_generator(dataset)
+        try: 
+            num_samples = sum(1 for _ in dataset)
+            batch_size = 1
+            for x in dataset: 
+                batch_size = x.shape[0]
+                break
+            total_steps = math.ceil(num_samples / batch_size)
+        except Exception: 
+            total_steps = "Unknown"
+            num_samples = "Unknown"
+            batch_size = "Unknown"
+    else: 
+        batched = isinstance(dataset.element_spec, tuple) or isinstance(dataset.element_spec, dict)
+        try:
+            batch_size = dataset.element_spec[0].shape[0] if batched else 1
+        except Exception:
+            batch_size = "Unknown"
 
-    batched = isinstance(dataset.element_spec, tuple) or isinstance(dataset.element_spec, dict)
-
-    try:
-        batch_size = dataset.element_spec[0].shape[0] if batched else 1
-    except Exception:
-        batch_size = "Unknown"
-
-    # Estimate dataset size (if it has a defined size)
-    try:
-        total_steps = dataset.cardinality().numpy()  # TensorFlow 2.1+ supports this
-        if total_steps == tf.data.experimental.INFINITE_CARDINALITY:
-            total_steps = "Infinite"
-            num_samples = "Infinite"
-        else:
-            num_samples = total_steps * (batch_size if batch_size != "Unknown" else 1)    
-    except Exception:
-        total_steps = "Unknown"
-        num_samples = "Unknown"
+        # Estimate dataset size (if it has a defined size)
+        try:
+            total_steps = dataset.cardinality().numpy()  # TensorFlow 2.1+ supports this
+            if total_steps == tf.data.experimental.INFINITE_CARDINALITY:
+                total_steps = "Infinite"
+                num_samples = "Infinite"
+            else:
+                num_samples = total_steps * (batch_size if batch_size != "Unknown" else 1)    
+        except Exception:
+            total_steps = "Unknown"
+            num_samples = "Unknown"
 
     # Log parameters
     # log_param(f"{dataset_label}_dataset_stat_batch_size", batch_size)
