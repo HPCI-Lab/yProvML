@@ -10,3 +10,10 @@ def get_activity(provDoc,record):
         return records[0]
     else:
         raise Exception(f">get_activity({record}): a record was not found") 
+    
+def get_or_create_activity(provDoc, record): 
+    records = provDoc.get_record(record)
+    if len(records)>0:
+        return records[0], False
+    else: 
+        return provDoc.activity(record), True

@@ -6,9 +6,8 @@ import zarr
 import netCDF4 as nc
 import zarr.codecs
 
-from prov4ml.datamodel.attribute_type import LoggingItemKind
-from prov4ml.datamodel.compressor_type import CompressorType, compressor_to_type
-from prov4ml.datamodel.metric_type import MetricsType, get_file_type
+from yprov4ml.datamodel.compressor_type import CompressorType, compressor_to_type
+from yprov4ml.datamodel.metric_type import MetricsType, get_file_type
 
 ZARR_CHUNK_SIZE = 1000
 
@@ -41,8 +40,8 @@ class MetricInfo:
     def __init__(self, 
                  name: str, 
                  context: Any, 
-                 source=LoggingItemKind, 
-                 use_compressor : Optional[CompressorType] = None
+                 source=str, 
+                 use_compressor : Optional[str] = None
                  ) -> None:
         """
         Initializes the MetricInfo class with the given name, context, and source.
@@ -116,7 +115,7 @@ class MetricInfo:
         None
         """
         process = process if process is not None else 0
-        file = os.path.join(path, f"{self.name}_{self.context}_GR{process}")
+        file = os.path.join(path, f"{self.name}_{self.context}_{self.source}_GR{process}")
 
         ft = file + get_file_type(file_type)
         if file_type == MetricsType.ZARR:

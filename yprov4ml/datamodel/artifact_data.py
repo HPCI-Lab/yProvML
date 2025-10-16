@@ -1,7 +1,7 @@
 
 from typing import Any, Optional
 
-from prov4ml.utils.funcs import get_current_time_millis
+from yprov4ml.utils.funcs import get_current_time_millis
 
 class ArtifactInfo:
     """
@@ -22,12 +22,14 @@ class ArtifactInfo:
         value: Any = None, 
         step: Optional[int] = None, 
         context: Optional[Any] = None, 
+        source: Optional[str] = None, 
         is_model : bool = False, 
     ) -> None:
         self.path = name
         self.value = value
         self.step = step
         self.context = context
+        self.source = source
         self.creation_timestamp = get_current_time_millis()
         self.last_modified_timestamp = get_current_time_millis()
 

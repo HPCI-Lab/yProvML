@@ -1,25 +1,50 @@
 import os
 import torch
 import json
+import sys
 import warnings
-import subprocess
-from pathlib import Path
 import prov.model as prov
 
 from torch.utils.data import DataLoader, Subset, Dataset, RandomSampler
 from typing import Any, Optional, Union
 
-from prov4ml.datamodel.attribute_type import LoggingItemKind
-from prov4ml.utils import energy_utils, flops_utils, system_utils, time_utils, funcs
-from prov4ml.datamodel.context import Context
-from prov4ml.constants import PROV4ML_DATA, VERBOSE
+from yprov4ml.utils import energy_utils, flops_utils, system_utils, time_utils, funcs
+from yprov4ml.datamodel.context import Context
+from yprov4ml.constants import PROV4ML_DATA, VERBOSE
+# import yprov4ml
     
+
+from torch import nn
+
+# from yprov4ml.wrappers.sample import ProvenanceTrackedSample
+
+# class ProvenanceTrackedPytorchModel(nn.Module): 
+#     def __init__(self, model, context=None, source=None):
+#         super().__init__()
+#         self.model = model
+#         self.model_name = type(model).__name__
+#         self.context = context
+#         self.source = source
+#         self.sample_has_passed = False
+
+#     def forward(self, x): 
+#         if issubclass(type(x), ProvenanceTrackedSample): 
+#             self.sample_has_passed = True
+#             if x.source is not None: 
+#                 self.source = x.source
+#             x = x.sample
+#         y = self.model(x)
+
+#         if self.sample_has_passed: 
+#             log_model(self.model_name, self.model, self.context, self.source)
+#         return y
+
 def log_metric(
         key: str, 
         value: float, 
         context: Optional[Context] = None, 
         step: Optional[int] = 0, 
-        source: Optional[LoggingItemKind] = None, 
+        source: Optional[str] = None, 
     ) -> None:
     """
     Logs a metric with the specified key, value, and context.
@@ -29,7 +54,7 @@ def log_metric(
         value (float): The value of the metric.
         context (Context): The context in which the metric is recorded.
         step (Optional[int], optional): The step number for the metric. Defaults to None.
-        source (LoggingItemKind, optional): The source of the logging item. Defaults to None.
+        source (str, optional): The source of the logging item. Defaults to None.
 
     Returns:
         None
@@ -38,11 +63,11 @@ def log_metric(
 
 def log_execution_start_time() -> None:
     """Logs the start time of the current execution. """
-    return log_param("execution_start_time", time_utils.get_time())
+    return log_param("execution_start_time", time_utils.get_time(), source='std.time')
 
 def log_execution_end_time() -> None:
     """Logs the end time of the current execution."""
-    return log_param("execution_end_time", time_utils.get_time())
+    return log_param("execution_end_time", time_utils.get_time(), source='std.time')
 
 def log_current_execution_time(label: str, context: Context, step: Optional[int] = None) -> None:
     """Logs the current execution time under the given label.
@@ -55,9 +80,9 @@ def log_current_execution_time(label: str, context: Context, step: Optional[int]
     Returns:
         None
     """
-    return log_metric(label, time_utils.get_time(), context, step=step, source=LoggingItemKind.EXECUTION_TIME)
+    return log_metric(label, time_utils.get_time(), step=step, source='std.time')
 
-def log_param(key: str, value: Any, context : Context = None) -> None:
+def log_param(key: str, value: Any, context : Optional[Context] = None, source : Optional[str] = None) -> None:
     """Logs a single parameter key-value pair. 
     
     Args:
@@ -67,7 +92,7 @@ def log_param(key: str, value: Any, context : Context = None) -> None:
     Returns:
         None
     """
-    PROV4ML_DATA.add_parameter(key,value, context)
+    PROV4ML_DATA.add_parameter(key,value, context, source)
 
 def _get_model_memory_footprint(model_name: str, model: Union[torch.nn.Module, Any]) -> dict:
     """Logs the memory footprint of the provided model.
@@ -147,6 +172,8 @@ def _get_model_layers_description(model_name : str, model: Union[torch.nn.Module
 def log_model(
         model_name: str, 
         model: Union[torch.nn.Module, Any], 
+        context : Optional[Context] = None, 
+        source : Optional[str] = None, 
         log_model_info: bool = True, 
         log_model_layers : bool = False,
         is_input: bool = False,
@@ -160,7 +187,12 @@ def log_model(
         log_model_layers (bool, optional): Whether to log model layers details. Defaults to False.
         log_as_artifact (bool, optional): Whether to log the model as an artifact. Defaults to True.
     """
-    e = save_model_version(model_name, model, Context.MODELS, incremental=False, is_input=is_input)
+    # if isinstance(model, ProvenanceTrackedPytorchModel): 
+    #     model_name = model.model_name
+    #     context = model.context
+    #     source = model.source
+        
+    e = save_model_version(model_name, model, context=context, source=source, incremental=False, is_input=is_input)
 
     if log_model_info:
         d = _get_model_memory_footprint(model_name, model)
@@ -184,7 +216,8 @@ def log_flops_per_epoch(label: str, model: Any, dataset: Any, context: Context, 
     Returns:
         None
     """
-    return log_metric(label, flops_utils.get_flops_per_epoch(model, dataset), context, step=step, source=LoggingItemKind.FLOPS_PER_EPOCH)
+    # create_source('fvcore.nn.FlopCountAnalysis', context)
+    return log_metric(label, flops_utils.get_flops_per_epoch(model, dataset), context, step=step, source='fvcore.nn.FlopCountAnalysis')
 
 def log_flops_per_batch(label: str, model: Any, batch: Any, context: Context, step: Optional[int] = None) -> None:
     """Logs the number of FLOPs (floating point operations) per batch for the given model and batch of data.
@@ -199,7 +232,8 @@ def log_flops_per_batch(label: str, model: Any, batch: Any, context: Context, st
     Returns:
         None
     """
-    return log_metric(label, flops_utils.get_flops_per_batch(model, batch), context, step=step, source=LoggingItemKind.FLOPS_PER_BATCH)
+    # create_source('fvcore.nn.FlopCountAnalysis', context)
+    return log_metric(label, flops_utils.get_flops_per_batch(model, batch), context, step=step, source='fvcore.nn.FlopCountAnalysis')
 
 def log_system_metrics(
     context: Context,
@@ -214,13 +248,20 @@ def log_system_metrics(
     Returns:
         None
     """
-    log_metric("cpu_usage", system_utils.get_cpu_usage(), context, step=step, source=LoggingItemKind.SYSTEM_METRIC)
-    log_metric("memory_usage", system_utils.get_memory_usage(), context, step=step, source=LoggingItemKind.SYSTEM_METRIC)
-    log_metric("disk_usage", system_utils.get_disk_usage(), context, step=step, source=LoggingItemKind.SYSTEM_METRIC)
-    log_metric("gpu_memory_usage", system_utils.get_gpu_memory_usage(), context, step=step, source=LoggingItemKind.SYSTEM_METRIC)
-    log_metric("gpu_usage", system_utils.get_gpu_usage(), context, step=step, source=LoggingItemKind.SYSTEM_METRIC)
-    log_metric("gpu_temperature", system_utils.get_gpu_temperature(), context, step=step, source=LoggingItemKind.SYSTEM_METRIC)
-    log_metric("gpu_power_usage", system_utils.get_gpu_power_usage(), context, step=step, source=LoggingItemKind.SYSTEM_METRIC)
+
+    
+    if sys.platform != 'darwin':
+        src = 'pyamdgpuinfo'
+    else: 
+        src = "apple_gpu"
+
+    log_metric("cpu_usage", system_utils.get_cpu_usage(), context, step=step, source=src)
+    log_metric("memory_usage", system_utils.get_memory_usage(), context, step=step, source=src)
+    log_metric("disk_usage", system_utils.get_disk_usage(), context, step=step, source=src)
+    log_metric("gpu_memory_usage", system_utils.get_gpu_memory_usage(), context, step=step, source=src)
+    log_metric("gpu_usage", system_utils.get_gpu_usage(), context, step=step, source=src)
+    log_metric("gpu_temperature", system_utils.get_gpu_temperature(), context, step=step, source=src)
+    log_metric("gpu_power_usage", system_utils.get_gpu_power_usage(), context, step=step, source=src)
 
 def log_carbon_metrics(
     context: Context,
@@ -235,22 +276,25 @@ def log_carbon_metrics(
     Returns:
         None
     """    
+    if PROV4ML_DATA.codecarbon_is_disabled: raise Exception(">log_carbon_metrics(): The log_carbon_metrics function cannot be called if disable_codecarbon=True")
+
     emissions = energy_utils.stop_carbon_tracked_block()
    
-    log_metric("emissions", emissions.energy_consumed, context, step=step, source=LoggingItemKind.CARBON_METRIC)
-    log_metric("emissions_rate", emissions.emissions_rate, context, step=step, source=LoggingItemKind.CARBON_METRIC)
-    log_metric("cpu_power", emissions.cpu_power, context, step=step, source=LoggingItemKind.CARBON_METRIC)
-    log_metric("gpu_power", emissions.gpu_power, context, step=step, source=LoggingItemKind.CARBON_METRIC)
-    log_metric("ram_power", emissions.ram_power, context, step=step, source=LoggingItemKind.CARBON_METRIC)
-    log_metric("cpu_energy", emissions.cpu_energy, context, step=step, source=LoggingItemKind.CARBON_METRIC)
-    log_metric("gpu_energy", emissions.gpu_energy, context, step=step, source=LoggingItemKind.CARBON_METRIC)
-    log_metric("ram_energy", emissions.ram_energy, context, step=step, source=LoggingItemKind.CARBON_METRIC)
-    log_metric("energy_consumed", emissions.energy_consumed, context, step=step, source=LoggingItemKind.CARBON_METRIC)
+    log_metric("emissions", emissions.energy_consumed, context, step=step, source='codecarbon')
+    log_metric("emissions_rate", emissions.emissions_rate, context, step=step, source='codecarbon')
+    log_metric("cpu_power", emissions.cpu_power, context, step=step, source='codecarbon')
+    log_metric("gpu_power", emissions.gpu_power, context, step=step, source='codecarbon')
+    log_metric("ram_power", emissions.ram_power, context, step=step, source='codecarbon')
+    log_metric("cpu_energy", emissions.cpu_energy, context, step=step, source='codecarbon')
+    log_metric("gpu_energy", emissions.gpu_energy, context, step=step, source='codecarbon')
+    log_metric("ram_energy", emissions.ram_energy, context, step=step, source='codecarbon')
+    log_metric("energy_consumed", emissions.energy_consumed, context, step=step, source='codecarbon')
 
 def log_artifact(
         artifact_name : str, 
         artifact_path : str, 
         context: Optional[Context] = None,
+        source : Optional[str] = None, 
         step: Optional[int] = None, 
         log_copy_in_prov_directory : bool = True, 
         is_model : bool = False, 
@@ -273,6 +317,7 @@ def log_artifact(
         artifact_path=artifact_path, 
         step=step, 
         context=context, 
+        source=source, 
         log_copy_in_prov_directory=log_copy_in_prov_directory, 
         is_model=is_model, 
         is_input=is_input, 
@@ -282,6 +327,7 @@ def save_model_version(
         model_name: str, 
         model: Union[torch.nn.Module, Any], 
         context: Optional[Context] = None, 
+        source: Optional[str] = None, 
         step: Optional[int] = None, 
         incremental : bool = True, 
         is_input : bool =False, 
@@ -304,18 +350,24 @@ def save_model_version(
     if not os.path.exists(path):
         os.makedirs(path, exist_ok=True)
 
+    # if isinstance(model, ProvenanceTrackedPytorchModel): 
+    #     model_name = model.model_name
+    #     context = model.context
+    #     source = model.source
+
     # count all models with the same name stored at "path"
     if incremental: 
         num_files = len([file for file in os.listdir(path) if str(file).startswith(model_name)])
         torch.save(model.state_dict(), f"{path}/{model_name}_{num_files}.pth")
-        return log_artifact(f"{model_name}_{num_files}", f"{path}/{model_name}_{num_files}.pth", context=context, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=is_input)
+        return log_artifact(f"{model_name}_{num_files}", f"{path}/{model_name}_{num_files}.pth", context=context, source=source, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=is_input)
     else: 
         torch.save(model.state_dict(), f"{path}/{model_name}.pth")
-        return log_artifact(model_name, f"{path}/{model_name}.pth", context=context, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=is_input)
+        return log_artifact(model_name, f"{path}/{model_name}.pth", context=context, source=source, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=is_input)
 
 def log_dataset(
         dataset_label : str, 
         dataset : Union[DataLoader, Subset, Dataset], 
+        context : Optional[Context] = None, 
         log_dataset_info : bool = True, 
         ): 
     """
@@ -329,7 +381,7 @@ def log_dataset(
         None
     """
 
-    e = log_artifact(f"{dataset_label}", "", context=Context.DATASETS, log_copy_in_prov_directory=False, is_model=False, is_input=True)
+    e = log_artifact(f"{dataset_label}", "", context=context, log_copy_in_prov_directory=False, is_model=False, is_input=True)
     
     if not log_dataset_info: return
 
@@ -369,6 +421,9 @@ def log_source_code(path: Optional[str] = None) -> None:
         path (Optional[str]): The path to the source code. If None, attempts to retrieve from Git.
     """
     PROV4ML_DATA.add_source_code(path)
+
+# def create_source(source_name, context): 
+#     PROV4ML_DATA.add_source(f"{source_name}_{context}", context)
 
 def create_context(context : str, is_subcontext_of=None): 
     PROV4ML_DATA.add_context(context, is_subcontext_of=is_subcontext_of)

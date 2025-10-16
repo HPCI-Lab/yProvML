@@ -6,8 +6,8 @@ import prov.model as prov
 from rocrate.rocrate import ROCrate
 from pathlib import Path
 
-from prov4ml.constants import PROV4ML_DATA
-from prov4ml.datamodel.metric_type import get_file_type
+from yprov4ml.constants import PROV4ML_DATA
+from yprov4ml.datamodel.metric_type import get_file_type
 
 def create_prov_document() -> prov.ProvDocument:
     
@@ -16,13 +16,13 @@ def create_prov_document() -> prov.ProvDocument:
     file_type = get_file_type(PROV4ML_DATA.metrics_file_type)
 
     for (name, ctx) in PROV4ML_DATA.metrics.keys():
-        metric_file_path = os.path.join(PROV4ML_DATA.METRIC_DIR, name + "_" + str(ctx) + f"_GR{PROV4ML_DATA.global_rank}" + file_type)
-        s = PROV4ML_DATA.metrics[(name, ctx)].source
-        e = PROV4ML_DATA.add_artifact(name,metric_file_path,0,ctx, is_input=False, log_copy_in_prov_directory=False)
+        source = PROV4ML_DATA.metrics[(name, ctx)].source
+        metric_file_path = os.path.join(PROV4ML_DATA.METRIC_DIR, f"{name}_{str(ctx)}_{str(source)}_GR{PROV4ML_DATA.global_rank}" + file_type)
+        e = PROV4ML_DATA.add_artifact(name,metric_file_path,0,ctx, source, is_input=False, log_copy_in_prov_directory=False)
         
         e.add_attributes({
             f'{PROV4ML_DATA.PROV_PREFIX}:context': str(ctx),
-            f'{PROV4ML_DATA.PROV_PREFIX}:source': str(s)
+            f'{PROV4ML_DATA.PROV_PREFIX}:source': str(source)
         })
 
     return doc

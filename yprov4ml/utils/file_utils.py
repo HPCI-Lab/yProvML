@@ -2,7 +2,7 @@
 import os
 import prov.model as prov
 
-from prov4ml.constants import PROV4ML_DATA
+from yprov4ml.constants import PROV4ML_DATA
 
 def save_prov_file(
         doc : prov.ProvDocument,
