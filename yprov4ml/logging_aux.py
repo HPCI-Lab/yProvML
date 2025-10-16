@@ -368,6 +368,7 @@ def log_dataset(
         dataset_label : str, 
         dataset : Union[DataLoader, Subset, Dataset], 
         context : Optional[Context] = None, 
+        source : Optional[str] = None, 
         log_dataset_info : bool = True, 
         ): 
     """
@@ -381,12 +382,11 @@ def log_dataset(
         None
     """
 
-    e = log_artifact(f"{dataset_label}", "", context=context, log_copy_in_prov_directory=False, is_model=False, is_input=True)
+    e = log_artifact(f"{dataset_label}", "", context=context, log_copy_in_prov_directory=False, is_model=False, is_input=True, source=source)
     
     if not log_dataset_info: return
 
     e.add_attributes({f"{dataset_label}_stat_total_samples": len(dataset)})
-    # handle datasets from DataLoader
     if isinstance(dataset, DataLoader):
         dl = dataset
         dataset = dl.dataset

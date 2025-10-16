@@ -311,6 +311,10 @@ class Prov4MLData:
             f'{self.PROV_PREFIX}:path': artifact_path,
         }
 
+        if artifact_path: 
+            file_size = os.path.getsize(artifact_path) / (1024*1024)
+            attributes[f'{self.PROV_PREFIX}:file_size_in_mb'] = file_size
+
         if is_input: 
             attributes.setdefault(f'{self.PROV_PREFIX}:role','input')
             return self._log_input(artifact_name, context, source, attributes)
