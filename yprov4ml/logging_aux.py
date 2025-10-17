@@ -261,74 +261,47 @@ def save_model_version(
         return log_artifact(model_name, f"{path}/{model_name}.pth", context=context, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=is_input)
 
 def log_dataset(
-        dataset_label : str, 
-        dataset : Any, 
-        log_dataset_info : bool = True, 
-        ): 
-    """
-    Logs dataset statistics such as total samples and total steps.
-
-    Args:
-        dataset (Union[DataLoader, Subset, Dataset]): The dataset for which statistics are to be logged.
-        label (str): The label to associate with the logged dataset statistics.
-
-    Returns:
-        None
-    """
-    e = log_artifact(f"{dataset_label}", "", context=Context.DATASETS, log_copy_in_prov_directory=False, is_model=False, is_input=True)
-    if not log_dataset_info: return
+        dataset_label: str, 
+        dataset: Any, 
+        log_dataset_info: bool = True, 
+        context : Optional[Context] = Context.DATASETS
+        ):
+    e = log_artifact(f"{dataset_label}", "", context=context, log_copy_in_prov_directory=False, is_model=False, is_input=True)
+    if not log_dataset_info:
+        return
 
     d = {}
 
-    if isinstance(dataset, (types.GeneratorType, map, filter)): 
-        try: 
-            num_samples = sum(1 for _ in dataset)
-            batch_size = 1
-            for x in dataset: 
-                batch_size = x.shape[0]
-                break
-            total_steps = math.ceil(num_samples / batch_size)
-        except Exception: 
-            total_steps = "Unknown"
-            num_samples = "Unknown"
-            batch_size = "Unknown"
-    else: 
-        batched = isinstance(dataset.element_spec, tuple) or isinstance(dataset.element_spec, dict)
+    if isinstance(dataset, tf.keras.utils.Sequence):
+        batch_size = dataset.batch_size
+        total_steps = len(dataset)
+        num_samples = total_steps * batch_size
+    else:
+        # fallback per tf.data.Dataset
         try:
-            batch_size = dataset.element_spec[0].shape[0] if batched else 1
+            batch_size = dataset.element_spec[0].shape[0]
         except Exception:
             batch_size = "Unknown"
 
-        # Estimate dataset size (if it has a defined size)
         try:
-            total_steps = dataset.cardinality().numpy()  # TensorFlow 2.1+ supports this
+            total_steps = dataset.cardinality().numpy()
             if total_steps == tf.data.experimental.INFINITE_CARDINALITY:
                 total_steps = "Infinite"
                 num_samples = "Infinite"
             else:
-                num_samples = total_steps * (batch_size if batch_size != "Unknown" else 1)    
+                num_samples = total_steps * (batch_size if batch_size != "Unknown" else 1)
         except Exception:
             total_steps = "Unknown"
             num_samples = "Unknown"
 
     # Log parameters
-    # log_param(f"{dataset_label}_dataset_stat_batch_size", batch_size)
-    # log_param(f"{dataset_label}_dataset_stat_total_steps", total_steps)
     d[f"{dataset_label}_dataset_stat_batch_size"] = str(batch_size)
     d[f"{dataset_label}_dataset_stat_total_steps"] = str(total_steps)
-
-
-    # Check if shuffle was applied
-    # shuffle_applied = False
-    # for op in dataset._variant_tracker._trackable_children.values():
-    #     if isinstance(op, tf.data.experimental.RandomDataset):
-    #         shuffle_applied = True
-    #         break
-    # log_param(f"{label}_dataset_stat_shuffle", shuffle_applied)
-
-    # log_param(f"{dataset_label}_dataset_stat_total_samples", num_samples)
     d[f"{dataset_label}_dataset_stat_total_samples"] = str(num_samples)
+
     e.add_attributes(d)
+    # # Stampa a terminale
+    # print(f"[PROVENANCE] {dataset_label} - batch_size: {batch_size}, steps: {total_steps}, total_samples: {num_samples}")
 
 def log_execution_command(cmd: str, path : str) -> None:
     """
