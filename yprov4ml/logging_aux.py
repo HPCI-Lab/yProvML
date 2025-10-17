@@ -303,6 +303,20 @@ def log_dataset(
     # # Stampa a terminale
     # print(f"[PROVENANCE] {dataset_label} - batch_size: {batch_size}, steps: {total_steps}, total_samples: {num_samples}")
 
+import hashlib
+def log_proof_of_learning_step(model, loss, batch, step, context=None): 
+    def hash_tensor(tensor):
+        arr = tf.reshape(tensor, [-1]).numpy()
+        return hashlib.sha256(arr.tobytes()).hexdigest()
+    
+    step_proof = {
+        'step': batch,
+        'loss': float(loss),
+        'weights_hash': hash_tensor(model.trainable_variables[0])
+    }
+    log_metric(f"{type(model).__class__}_pol", step_proof, context=context, step=step)
+
+
 def log_execution_command(cmd: str, path : str) -> None:
     """
     Logs the execution command.
