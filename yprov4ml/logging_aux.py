@@ -4,13 +4,12 @@ import prov.model as prov
 import tensorflow as tf
 import keras
 from typing import Any, Optional
-import types
-import math
+import hashlib
 
 from yprov4ml.datamodel.attribute_type import LoggingItemKind
-from yprov4ml.utils import energy_utils, system_utils, time_utils, funcs
+from yprov4ml.utils import energy_utils, system_utils, time_utils
 from yprov4ml.datamodel.context import Context
-from yprov4ml.constants import PROV4ML_DATA, VERBOSE
+from yprov4ml.constants import PROV4ML_DATA
     
 def log_metric(
         key: str, 
@@ -298,13 +297,9 @@ def log_dataset(
     d[f"{dataset_label}_dataset_stat_batch_size"] = str(batch_size)
     d[f"{dataset_label}_dataset_stat_total_steps"] = str(total_steps)
     d[f"{dataset_label}_dataset_stat_total_samples"] = str(num_samples)
-
     e.add_attributes(d)
-    # # Stampa a terminale
-    # print(f"[PROVENANCE] {dataset_label} - batch_size: {batch_size}, steps: {total_steps}, total_samples: {num_samples}")
 
-import hashlib
-def log_proof_of_learning_step(model, loss, batch, step, context=None): 
+def log_proof_of_learning_step(model_label, model, loss, batch, step, context=None): 
     def hash_tensor(tensor):
         arr = tf.reshape(tensor, [-1]).numpy()
         return hashlib.sha256(arr.tobytes()).hexdigest()
@@ -314,7 +309,7 @@ def log_proof_of_learning_step(model, loss, batch, step, context=None):
         'loss': float(loss),
         'weights_hash': hash_tensor(model.trainable_variables[0])
     }
-    log_metric(f"{type(model).__class__}_pol", step_proof, context=context, step=step)
+    log_metric(f"{model_label}_pol", step_proof, context=context, step=step)
 
 
 def log_execution_command(cmd: str, path : str) -> None:

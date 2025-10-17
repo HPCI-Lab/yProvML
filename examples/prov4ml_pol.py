@@ -1,6 +1,8 @@
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
+import numpy as np
+import random
 
 import sys
 sys.path.append("./")
@@ -11,9 +13,19 @@ yprov4ml.start_run(
     prov_user_namespace="www.example.org", 
     provenance_save_dir="prov", 
     collect_all_processes=False, 
-    save_after_n_logs=100, 
-    disable_codecarbon=True, 
+    save_after_n_logs=100
 )
+
+# Seed setting, not sure all of these are necessary
+SEED = 42
+yprov4ml.log_param("seed", SEED)
+tf.random.set_seed(SEED)
+np.random.seed(SEED)
+random.seed(SEED)
+
+# Log source code and main file for reproducible execution
+yprov4ml.log_execution_command("python", "prov4ml_pol.py")
+yprov4ml.log_source_code("examples/prov4ml_pol.py")
 
 (ds_train, ds_test), ds_info = tfds.load(
     'mnist',
@@ -22,7 +34,6 @@ yprov4ml.start_run(
     as_supervised=True,
     with_info=True,
 )
-
 
 yprov4ml.log_dataset("ds_train", ds_train)
 yprov4ml.log_dataset("ds_test", ds_test)
@@ -47,6 +58,9 @@ model = tf.keras.models.Sequential([
     tf.keras.layers.Dense(128, activation='relu'),
     tf.keras.layers.Dense(10)
 ])
+
+# For POL, at least one loss is necessary
+# Pliz don't have more than one, I haven't tested it :'(
 model.compile(
     optimizer=tf.keras.optimizers.Adam(0.001),
     loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
@@ -61,9 +75,11 @@ model.fit(
     ds_train,
     epochs=EPOCHS,
     validation_data=ds_test,
-    callbacks=[
-        yprov4ml.MetricLoggingCallback(log_carbon_metrics=False, log_system_metrics=True), 
-        ], 
+    # Add POL Callback, 
+    # you can also specify how many samples it skips
+    # Not sure which amount is best, 
+    # try to have 10 logs for every epoch maybe
+    callbacks=[yprov4ml.POLLoggingCallback("model_label", model, log_every_n_steps=50)], 
 )
 
 yprov4ml.end_run(
