@@ -1,14 +1,23 @@
 # prov4ml/visuals/visualize_runs.py
-import os, json
+import os, json, textwrap
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from scipy.cluster.hierarchy import dendrogram, linkage
+from sklearn.ensemble import RandomForestClassifier
+
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
-import textwrap
+
+# SHAP is optional; we fail gracefully if missing
+try:
+    import shap
+    _HAS_SHAP = True
+except Exception:
+    _HAS_SHAP = False
 
 # Parameters we’re allowed to use for PCA/Clustering (if present)
 PARAM_COLS_CANDIDATES = [
@@ -31,7 +40,6 @@ def _cluster_summary(df, idxs, cols):
     return sub.median(numeric_only=True)
 
 def _format_change(name, left_val, right_val):
-    # ints get A→B ; floats get Δv (L=…, R=…)
     def is_intlike(x):
         try:
             return float(x).is_integer()
@@ -47,12 +55,11 @@ def _top_param_changes(df, left_idx, right_idx, param_cols):
     left = _cluster_summary(df, left_idx, param_cols)
     right = _cluster_summary(df, right_idx, param_cols)
     diffs = (left - right).abs().sort_values(ascending=False)
-    diffs = diffs[diffs > 0]  # keep non-zero only
+    diffs = diffs[diffs > 0]  # non-zero only
 
     if diffs.empty:
         return ["no-change"]
 
-    # Prefer non-seed params; only use seed if nothing else differs
     non_seed = [p for p in diffs.index if p not in IGNORE_FOR_ANNOT]
     chosen = non_seed[:TOP_K_CHANGES] if non_seed else list(diffs.index[:TOP_K_CHANGES])
 
@@ -62,9 +69,9 @@ def _top_param_changes(df, left_idx, right_idx, param_cols):
     return labels
 
 
-def visualize_runs(df: pd.DataFrame, save_dir: str = "prov4ml/visuals/outputs"):
+def visualize_runs(df: pd.DataFrame, save_dir: str = "prov4ml/visuals/outputs", n_clusters: int = 3):
     os.makedirs(save_dir, exist_ok=True)
-    print("→ Running PCA + Dendrogram (params-only) with accuracy shown as labels")
+    print("→ Running PCA + Dendrogram (params-only); accuracy shown as labels (not used for PCA)")
     print(f"→ Saving figures to: {save_dir}")
 
     # --- pick parameter columns actually present ---
@@ -87,16 +94,16 @@ def visualize_runs(df: pd.DataFrame, save_dir: str = "prov4ml/visuals/outputs"):
     pcs = pca.fit_transform(X_scaled)
     df = df.copy()
     df["PC1"], df["PC2"] = pcs[:, 0], pcs[:, 1]
+
     # --- Only show legend entries for parameters that actually vary ---
     def _varies(col):
         vals = pd.unique(df[col].dropna())
         return len(vals) > 1
 
     varying_bs = "param_batch_size" in df.columns and _varies("param_batch_size")
-    varying_epochs = "param_epochs" in df.columns and _varies("param_epochs")
 
     # ===== PCA PLOT =====
-    plt.figure(figsize=(7.5, 6))
+    plt.figure(figsize=(7.8, 6.2))
 
     # color by accuracy if present; otherwise fall back to param_lr (then first param)
     color_col = (
@@ -104,7 +111,6 @@ def visualize_runs(df: pd.DataFrame, save_dir: str = "prov4ml/visuals/outputs"):
         if ("ACC_val" in df.columns and pd.api.types.is_numeric_dtype(df["ACC_val"]))
         else ("param_lr" if "param_lr" in param_cols else param_cols[0])
     )
-
 
     # Marker by batch size (fallback to a single marker)
     marker_col = "param_batch_size" if "param_batch_size" in param_cols else None
@@ -136,19 +142,18 @@ def visualize_runs(df: pd.DataFrame, save_dir: str = "prov4ml/visuals/outputs"):
         cbar = plt.colorbar(last_scatter)
         cbar.set_label(color_col)
 
-
     # Legend for batch_size markers
     marker_handles = []
     if varying_bs and marker_col:
         for bs in unique_bs:
             marker_handles.append(
                 mlines.Line2D([], [], color="black", marker=marker_map[bs],
-                            linestyle="None", markersize=8, label=f"batch_size={bs}")
+                              linestyle="None", markersize=8, label=f"batch_size={bs}")
             )
 
-
     handles = []
-    if marker_handles: handles.extend(marker_handles)
+    if marker_handles:
+        handles.extend(marker_handles)
     if handles:
         plt.legend(handles=handles, loc="best", frameon=True)
 
@@ -157,14 +162,10 @@ def visualize_runs(df: pd.DataFrame, save_dir: str = "prov4ml/visuals/outputs"):
         label = f"exp{int(row['exp'])}"
         if acc_col is not None and pd.notna(row[acc_col]):
             label += f" | acc={row[acc_col]:.3f}"
-        if "param_epochs" in df.columns and not pd.isna(row["param_epochs"]):
-            label += f" | epochs={int(row['param_epochs'])}"
-        elif "epochs" in df.columns and not pd.isna(row["epochs"]):
-            label += f" | epochs={int(row['epochs'])}"
+        # (epochs removed from legend per your request; we keep it out of labels too)
         plt.text(row["PC1"] + 0.02, row["PC2"], label, fontsize=8)
 
-
-    plt.title("PCA of Experiments (params only)\n(Accuracy shown in labels; not used for PCA)")
+    plt.title("PCA of Experiments (params only)\n(Accuracy in labels; not used for PCA)")
     plt.xlabel(f"PC1 ({pca.explained_variance_ratio_[0]*100:.1f}% var)")
     plt.ylabel(f"PC2 ({pca.explained_variance_ratio_[1]*100:.1f}% var)")
     # Caption with the params actually used in PCA
@@ -230,11 +231,102 @@ def visualize_runs(df: pd.DataFrame, save_dir: str = "prov4ml/visuals/outputs"):
     plt.close()
     print("✅ Saved dendrogram_runs_annotated.png")
 
+    # ===== SUPERVISED CLUSTER EXPLANATION (Surrogate model + SHAP) =====
+    print(f"→ Explaining cluster membership with a surrogate (RandomForest) + SHAP; n_clusters={n_clusters}")
+    labels = fcluster(Z, t=n_clusters, criterion="maxclust")
+    df["cluster"] = labels
+        # ===== CLUSTER SUMMARY REPORT =====
+    print("→ Building cluster_report.csv")
+    cluster_report = []
+    grouped = df.groupby("cluster")
+    for cluster_id, sub in grouped:
+        row = {"cluster": cluster_id, "n_experiments": len(sub)}
+        # Median or mean for key numeric columns
+        for c in df.columns:
+            if np.issubdtype(df[c].dtype, np.number):
+                row[f"median_{c}"] = np.median(sub[c].dropna())
+                row[f"mean_{c}"] = np.mean(sub[c].dropna())
+        cluster_report.append(row)
 
-    # Save which params were used (for reproducibility)
-    with open(os.path.join(save_dir, "params_used.json"), "w") as f:
-        json.dump({"used_params_for_pca_and_clustering": param_cols}, f, indent=2)
+    report_df = pd.DataFrame(cluster_report).sort_values("cluster")
+    csv_path = os.path.join(save_dir, "cluster_report.csv")
+    report_df.to_csv(csv_path, index=False)
+    print(f"✅ Saved cluster_report.csv → {csv_path}")
 
-    print(f"\nUsed params for PCA/Clustering: {param_cols}")
-    if acc_col:
-        print("Accuracy column displayed in labels (not used for PCA/clustering): ACC_val")
+
+    X_params = df[param_cols].values
+    y_clusters = df["cluster"].values
+
+    clf = RandomForestClassifier(
+        n_estimators=300,
+        max_depth=None,
+        random_state=0,
+        class_weight="balanced"
+    )
+    clf.fit(X_params, y_clusters)
+
+    # Export a simple text summary (feature importances) even if SHAP is missing
+    importances = pd.Series(clf.feature_importances_, index=param_cols).sort_values(ascending=False)
+    importances.to_csv(os.path.join(save_dir, "surrogate_feature_importances.csv"))
+    print("✅ Saved surrogate_feature_importances.csv")
+
+    if not _HAS_SHAP:
+        print("[warn] SHAP not installed; skipping SHAP explanations. pip install shap")
+        return
+
+    try:
+        explainer = shap.TreeExplainer(clf)
+        shap_values = explainer.shap_values(X_params)   # list: one array per class
+        # Global importance: mean(|SHAP|) aggregated across classes
+        import numpy as _np
+        abs_per_class = [_np.abs(sv) for sv in shap_values]  # [C x N x F]
+        mean_abs = _np.mean(_np.stack([a.mean(axis=0) for a in abs_per_class], axis=0), axis=0)  # [F]
+        feature_names = param_cols
+
+        # (a) Bar plot (global)
+        plt.figure(figsize=(7.5, 5))
+        order = _np.argsort(mean_abs)[::-1]
+        plt.bar([feature_names[i] for i in order], mean_abs[order])
+        plt.xticks(rotation=30, ha="right")
+        plt.title(f"SHAP global importance for cluster membership (n_clusters={n_clusters})")
+        plt.tight_layout()
+        plt.savefig(os.path.join(save_dir, "shap_clusters_bar.png"), dpi=300)
+        plt.close()
+
+        # (b) Beeswarm for the largest cluster
+        largest_label = pd.Series(labels).value_counts().idxmax()
+        unique_sorted = sorted(pd.unique(labels))
+        class_index = unique_sorted.index(largest_label)
+
+        shap.summary_plot(
+            shap_values[class_index],
+            features=X_params,
+            feature_names=feature_names,
+            show=False
+        )
+        plt.title(f"SHAP beeswarm (cluster={largest_label})")
+        plt.tight_layout()
+        plt.savefig(os.path.join(save_dir, "shap_beeswarm_largest_cluster.png"), dpi=300)
+        plt.close()
+
+        # (c) Dependence plots for top 3 features
+        top3 = [feature_names[i] for i in order[:3]]
+        for feat in top3:
+            idx = feature_names.index(feat)
+            shap.dependence_plot(
+                idx,
+                shap_values[class_index],
+                X_params,
+                feature_names=feature_names,
+                show=False
+            )
+            safe = feat.replace("/", "_")
+            plt.title(f"SHAP dependence for '{feat}' (cluster={largest_label})")
+            plt.tight_layout()
+            plt.savefig(os.path.join(save_dir, f"shap_dependence_{safe}.png"), dpi=300)
+            plt.close()
+
+        print("✅ Saved SHAP cluster explanations → "
+              f"{save_dir}/shap_clusters_bar.png, shap_beeswarm_largest_cluster.png, shap_dependence_*.png")
+    except Exception as e:
+        print(f"[warn] SHAP cluster explanations failed: {e}")

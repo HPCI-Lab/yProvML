@@ -1,0 +1,665 @@
+digraph G {
+rankdir=RL;
+charset="utf-8";
+n1 [label="deniztas", URL="mnist_exp_GR0_4deniztas", shape=house, style=filled, fillcolor="#FED37F"];
+n2 [label="context:mnist_exp_GR0_4", URL="contextmnist_exp_GR0_4", shape=box, style=filled, fillcolor="#9FB1FC", color="#0000FF"];
+ann1 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4execution_end_time">execution_end_time</TD>
+        <TD align="left">1760968155.1313457</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4execution_start_time">execution_start_time</TD>
+        <TD align="left">1760968128.1759286</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLartifact_uri">yProv4ML:artifact_uri</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLexperiment_dir">yProv4ML:experiment_dir</TD>
+        <TD align="left">examples/prov/mnist_exp_4</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLexperiment_name">yProv4ML:experiment_name</TD>
+        <TD align="left">mnist_exp_GR0_4</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLglobal_rank">yProv4ML:global_rank</TD>
+        <TD align="left">0</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlevel">yProv4ML:level</TD>
+        <TD align="left">0</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLprovenance_path">yProv4ML:provenance_path</TD>
+        <TD align="left">examples/prov</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpython_version">yProv4ML:python_version</TD>
+        <TD align="left">3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrun_id">yProv4ML:run_id</TD>
+        <TD align="left">4</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann1 -> n2 [arrowhead=none, style=dashed, color=gray];
+n3 [label="context:Context.TRAINING", URL="contextContext.TRAINING", shape=box, style=filled, fillcolor="#9FB1FC", color="#0000FF"];
+ann2 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlevel">yProv4ML:level</TD>
+        <TD align="left">1</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann2 -> n3 [arrowhead=none, style=dashed, color=gray];
+n4 [label="context:Context.VALIDATION", URL="contextContext.VALIDATION", shape=box, style=filled, fillcolor="#9FB1FC", color="#0000FF"];
+ann3 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlevel">yProv4ML:level</TD>
+        <TD align="left">1</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann3 -> n4 [arrowhead=none, style=dashed, color=gray];
+n5 [label="context:Context.TESTING", URL="contextContext.TESTING", shape=box, style=filled, fillcolor="#9FB1FC", color="#0000FF"];
+ann4 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlevel">yProv4ML:level</TD>
+        <TD align="left">1</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann4 -> n5 [arrowhead=none, style=dashed, color=gray];
+n6 [label="context:Context.DATASETS", URL="contextContext.DATASETS", shape=box, style=filled, fillcolor="#9FB1FC", color="#0000FF"];
+ann5 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlevel">yProv4ML:level</TD>
+        <TD align="left">1</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann5 -> n6 [arrowhead=none, style=dashed, color=gray];
+n7 [label="context:Context.MODELS", URL="contextContext.MODELS", shape=box, style=filled, fillcolor="#9FB1FC", color="#0000FF"];
+ann6 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlevel">yProv4ML:level</TD>
+        <TD align="left">1</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann6 -> n7 [arrowhead=none, style=dashed, color=gray];
+n8 [label="train_loader", URL="mnist_exp_GR0_4train_loader", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann7 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4train_loader_stat_batch_size">train_loader_stat_batch_size</TD>
+        <TD align="left">32</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4train_loader_stat_num_workers">train_loader_stat_num_workers</TD>
+        <TD align="left">0</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4train_loader_stat_shuffle">train_loader_stat_shuffle</TD>
+        <TD align="left">True</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4train_loader_stat_total_samples">train_loader_stat_total_samples</TD>
+        <TD align="left">200</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4train_loader_stat_total_steps">train_loader_stat_total_steps</TD>
+        <TD align="left">200</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">train_loader</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left"></TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">input</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann7 -> n8 [arrowhead=none, style=dashed, color=gray];
+n9 [label="test_loader", URL="mnist_exp_GR0_4test_loader", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann8 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4test_loader_stat_batch_size">test_loader_stat_batch_size</TD>
+        <TD align="left">32</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4test_loader_stat_num_workers">test_loader_stat_num_workers</TD>
+        <TD align="left">0</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4test_loader_stat_shuffle">test_loader_stat_shuffle</TD>
+        <TD align="left">False</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4test_loader_stat_total_samples">test_loader_stat_total_samples</TD>
+        <TD align="left">100</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4test_loader_stat_total_steps">test_loader_stat_total_steps</TD>
+        <TD align="left">100</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">test_loader</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left"></TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">input</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann8 -> n9 [arrowhead=none, style=dashed, color=gray];
+n10 [label="mnist_model_version_0", URL="mnist_exp_GR0_4mnist_model_version_0", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann9 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">mnist_model_version_0</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts/mnist_model_version/mnist_model_version_0.pth</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann9 -> n10 [arrowhead=none, style=dashed, color=gray];
+n11 [label="mnist_model_version_1", URL="mnist_exp_GR0_4mnist_model_version_1", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann10 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">mnist_model_version_1</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts/mnist_model_version/mnist_model_version_1.pth</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann10 -> n11 [arrowhead=none, style=dashed, color=gray];
+n12 [label="mnist_model_version_2", URL="mnist_exp_GR0_4mnist_model_version_2", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann11 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">mnist_model_version_2</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts/mnist_model_version/mnist_model_version_2.pth</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann11 -> n12 [arrowhead=none, style=dashed, color=gray];
+n13 [label="mnist_model_version_3", URL="mnist_exp_GR0_4mnist_model_version_3", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann12 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">mnist_model_version_3</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts/mnist_model_version/mnist_model_version_3.pth</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann12 -> n13 [arrowhead=none, style=dashed, color=gray];
+n14 [label="mnist_model_version_4", URL="mnist_exp_GR0_4mnist_model_version_4", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann13 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">mnist_model_version_4</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts/mnist_model_version/mnist_model_version_4.pth</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann13 -> n14 [arrowhead=none, style=dashed, color=gray];
+n15 [label="mnist_model_version_5", URL="mnist_exp_GR0_4mnist_model_version_5", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann14 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">mnist_model_version_5</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts/mnist_model_version/mnist_model_version_5.pth</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann14 -> n15 [arrowhead=none, style=dashed, color=gray];
+n16 [label="mnist_model_version_6", URL="mnist_exp_GR0_4mnist_model_version_6", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann15 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">mnist_model_version_6</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts/mnist_model_version/mnist_model_version_6.pth</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann15 -> n16 [arrowhead=none, style=dashed, color=gray];
+n17 [label="mnist_model_version_7", URL="mnist_exp_GR0_4mnist_model_version_7", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann16 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">mnist_model_version_7</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts/mnist_model_version/mnist_model_version_7.pth</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann16 -> n17 [arrowhead=none, style=dashed, color=gray];
+n18 [label="mnist_model_version_8", URL="mnist_exp_GR0_4mnist_model_version_8", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann17 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">mnist_model_version_8</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts/mnist_model_version/mnist_model_version_8.pth</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann17 -> n18 [arrowhead=none, style=dashed, color=gray];
+n19 [label="mnist_model_version_9", URL="mnist_exp_GR0_4mnist_model_version_9", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann18 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">mnist_model_version_9</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts/mnist_model_version/mnist_model_version_9.pth</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann18 -> n19 [arrowhead=none, style=dashed, color=gray];
+n20 [label="mnist_model_final", URL="mnist_exp_GR0_4mnist_model_final", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann19 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4layers_description_path">layers_description_path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts/mnist_model_final/mnist_model_final_layers_description.json</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4memory_of_model">memory_of_model</TD>
+        <TD align="left">0.81412</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4model_name">model_name</TD>
+        <TD align="left">mnist_model_final</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4total_memory_load_of_model">total_memory_load_of_model</TD>
+        <TD align="left">2.44236</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="mnist_exp_GR0_4total_params">total_params</TD>
+        <TD align="left">203530</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">mnist_model_final</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts/mnist_model_final/mnist_model_final.pth</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann19 -> n20 [arrowhead=none, style=dashed, color=gray];
+n21 [label="Original requirements.txt", URL="mnist_exp_GR0_4Original requirements.txt", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann20 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">Original requirements.txt</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">requirements.txt</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">input</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann20 -> n21 [arrowhead=none, style=dashed, color=gray];
+n22 [label="requirements.txt", URL="mnist_exp_GR0_4requirements.txt", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann21 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">requirements.txt</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/artifacts/requirements.txt</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">input</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann21 -> n22 [arrowhead=none, style=dashed, color=gray];
+n23 [label="param_batch_size", URL="mnist_exp_GR0_4param_batch_size", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann22 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLcontext">yProv4ML:context</TD>
+        <TD align="left">Context.TRAINING</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">param_batch_size</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/metrics/param_batch_size_Context.TRAINING_GR0.nc</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLsource">yProv4ML:source</TD>
+        <TD align="left">LoggingItemKind.METRIC</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann22 -> n23 [arrowhead=none, style=dashed, color=gray];
+n24 [label="param_lr", URL="mnist_exp_GR0_4param_lr", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann23 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLcontext">yProv4ML:context</TD>
+        <TD align="left">Context.TRAINING</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">param_lr</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/metrics/param_lr_Context.TRAINING_GR0.nc</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLsource">yProv4ML:source</TD>
+        <TD align="left">LoggingItemKind.METRIC</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann23 -> n24 [arrowhead=none, style=dashed, color=gray];
+n25 [label="param_epochs", URL="mnist_exp_GR0_4param_epochs", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann24 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLcontext">yProv4ML:context</TD>
+        <TD align="left">Context.TRAINING</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">param_epochs</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/metrics/param_epochs_Context.TRAINING_GR0.nc</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLsource">yProv4ML:source</TD>
+        <TD align="left">LoggingItemKind.METRIC</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann24 -> n25 [arrowhead=none, style=dashed, color=gray];
+n26 [label="param_seed", URL="mnist_exp_GR0_4param_seed", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann25 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLcontext">yProv4ML:context</TD>
+        <TD align="left">Context.TRAINING</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">param_seed</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/metrics/param_seed_Context.TRAINING_GR0.nc</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLsource">yProv4ML:source</TD>
+        <TD align="left">LoggingItemKind.METRIC</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann25 -> n26 [arrowhead=none, style=dashed, color=gray];
+n27 [label="MSE_train", URL="mnist_exp_GR0_4MSE_train", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann26 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLcontext">yProv4ML:context</TD>
+        <TD align="left">Context.TRAINING</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">MSE_train</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/metrics/MSE_train_Context.TRAINING_GR0.nc</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLsource">yProv4ML:source</TD>
+        <TD align="left">LoggingItemKind.METRIC</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann26 -> n27 [arrowhead=none, style=dashed, color=gray];
+n28 [label="cpu_usage", URL="mnist_exp_GR0_4cpu_usage", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann27 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLcontext">yProv4ML:context</TD>
+        <TD align="left">Context.TRAINING</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">cpu_usage</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/metrics/cpu_usage_Context.TRAINING_GR0.nc</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLsource">yProv4ML:source</TD>
+        <TD align="left">LoggingItemKind.SYSTEM_METRIC</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann27 -> n28 [arrowhead=none, style=dashed, color=gray];
+n29 [label="memory_usage", URL="mnist_exp_GR0_4memory_usage", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann28 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLcontext">yProv4ML:context</TD>
+        <TD align="left">Context.TRAINING</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">memory_usage</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/metrics/memory_usage_Context.TRAINING_GR0.nc</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLsource">yProv4ML:source</TD>
+        <TD align="left">LoggingItemKind.SYSTEM_METRIC</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann28 -> n29 [arrowhead=none, style=dashed, color=gray];
+n30 [label="disk_usage", URL="mnist_exp_GR0_4disk_usage", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann29 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLcontext">yProv4ML:context</TD>
+        <TD align="left">Context.TRAINING</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">disk_usage</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/metrics/disk_usage_Context.TRAINING_GR0.nc</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLsource">yProv4ML:source</TD>
+        <TD align="left">LoggingItemKind.SYSTEM_METRIC</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann29 -> n30 [arrowhead=none, style=dashed, color=gray];
+n31 [label="MSE_val", URL="mnist_exp_GR0_4MSE_val", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann30 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLcontext">yProv4ML:context</TD>
+        <TD align="left">Context.VALIDATION</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">MSE_val</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/metrics/MSE_val_Context.VALIDATION_GR0.nc</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLsource">yProv4ML:source</TD>
+        <TD align="left">LoggingItemKind.METRIC</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann30 -> n31 [arrowhead=none, style=dashed, color=gray];
+n32 [label="ACC_val", URL="mnist_exp_GR0_4ACC_val", shape=oval, style=filled, fillcolor="#FFFC87", color="#808080"];
+ann31 [label=<<TABLE cellpadding="0" border="0">
+    <TR>
+        <TD align="left" href="yProv4MLcontext">yProv4ML:context</TD>
+        <TD align="left">Context.VALIDATION</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLlabel">yProv4ML:label</TD>
+        <TD align="left">ACC_val</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLpath">yProv4ML:path</TD>
+        <TD align="left">examples/prov/mnist_exp_4/metrics/ACC_val_Context.VALIDATION_GR0.nc</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLrole">yProv4ML:role</TD>
+        <TD align="left">output</TD>
+    </TR>
+    <TR>
+        <TD align="left" href="yProv4MLsource">yProv4ML:source</TD>
+        <TD align="left">LoggingItemKind.METRIC</TD>
+    </TR>
+    </TABLE>>, shape=note, color=gray, fontcolor=black, fontsize=10];
+ann31 -> n32 [arrowhead=none, style=dashed, color=gray];
+b1 [label="", shape=point, color=gray];
+n2 -> b1 [arrowhead=none, label=wasAssociatedWith, fontsize=10.0, color="#FED37F"];
+b1 -> n1 [fontsize=10.0, color="#FED37F"];
+n3 -> n2 [label=wasInformedBy, fontsize=10.0];
+n4 -> n2 [label=wasInformedBy, fontsize=10.0];
+n5 -> n2 [label=wasInformedBy, fontsize=10.0];
+n6 -> n2 [label=wasInformedBy, fontsize=10.0];
+n7 -> n2 [label=wasInformedBy, fontsize=10.0];
+n6 -> n8 [label=used, fontsize=10.0, color=red4, fontcolor=red];
+n6 -> n9 [label=used, fontsize=10.0, color=red4, fontcolor=red];
+n10 -> n7 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n11 -> n7 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n12 -> n7 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n13 -> n7 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n14 -> n7 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n15 -> n7 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n16 -> n7 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n17 -> n7 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n18 -> n7 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n19 -> n7 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n20 -> n7 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n2 -> n21 [label=used, fontsize=10.0, color=red4, fontcolor=red];
+n2 -> n22 [label=used, fontsize=10.0, color=red4, fontcolor=red];
+b2 [label="", shape=point, color=gray];
+n22 -> b2 [arrowhead=none, label=wasDerivedFrom, fontsize=10.0];
+b2 -> n21 [fontsize=10.0];
+n23 -> n3 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n24 -> n3 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n25 -> n3 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n26 -> n3 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n27 -> n3 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n28 -> n3 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n29 -> n3 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n30 -> n3 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n31 -> n4 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+n32 -> n4 [label=wasGeneratedBy, fontsize=10.0, color=darkgreen, fontcolor=darkgreen];
+}
