@@ -13,7 +13,9 @@ yprov4ml.start_run(
     prov_user_namespace="www.example.org", 
     provenance_save_dir="prov", 
     collect_all_processes=False, 
-    save_after_n_logs=100
+    csv_separator=";", 
+    save_after_n_logs=100, 
+    disable_codecarbon=True
 )
 
 # Seed setting, not sure all of these are necessary
@@ -58,6 +60,9 @@ model = tf.keras.models.Sequential([
     tf.keras.layers.Dense(128, activation='relu'),
     tf.keras.layers.Dense(10)
 ])
+
+optimizer = tf.keras.optimizers.Adam(0.001)
+loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
 # For POL, at least one loss is necessary
 # Pliz don't have more than one, I haven't tested it :'(
