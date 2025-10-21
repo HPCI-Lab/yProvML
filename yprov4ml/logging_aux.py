@@ -311,10 +311,11 @@ def log_proof_of_learning_step(model_label, model, loss, batch, step, context=No
         'weights_hash': hash_tensor(model.trainable_variables[0])
     }
     log_metric(f"{model_label}_pol", step_proof, context=context, step=step)
-    path = os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, f"{model_label}_pol_checkpoints", f"{model_label}_pol_checkpoint_{step}.npy")
+
+    path = os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, f"{model_label}_pol_checkpoints", f"{model_label}_pol_checkpoint_{step}_{batch}.npy")
     os.makedirs(os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, f"{model_label}_pol_checkpoints"), exist_ok=True)
     np.save(path, tf.reshape(model.trainable_variables[0], [-1]).numpy())
-    log_artifact(f"{model_label}_pol_checkpoint_{step}", path, context=context, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=False)
+    log_artifact(f"{model_label}_pol_checkpoint_{step}_{batch}", path, context=context, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=False)
 
 
 def log_execution_command(cmd: str, path : str) -> None:
