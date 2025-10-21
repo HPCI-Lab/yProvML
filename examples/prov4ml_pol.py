@@ -63,12 +63,13 @@ model = tf.keras.models.Sequential([
 
 optimizer = tf.keras.optimizers.Adam(0.001)
 loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+loss_fn2 = tf.keras.losses.MeanSquaredError()
 
 # For POL, at least one loss is necessary
 # Pliz don't have more than one, I haven't tested it :'(
 model.compile(
     optimizer=tf.keras.optimizers.Adam(0.001),
-    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+    loss=[loss_fn, loss_fn2],
     metrics=[tf.keras.metrics.SparseCategoricalAccuracy()],
 )
 yprov4ml.log_model("model_Sequential", model)
