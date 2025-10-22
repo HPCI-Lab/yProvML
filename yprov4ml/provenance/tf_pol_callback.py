@@ -7,19 +7,19 @@ class POLLoggingCallback(tf.keras.callbacks.Callback):
         super().__init__()
         self.current_epoch = 0
         self.model_label = model_label
-        self.model = model_ptr
+        self.model_ptr = model_ptr
         self.log_every_n_steps = log_every_n_steps
         self.step_counter = 0
 
     def on_epoch_end(self, epoch, logs=None):
         self.current_epoch = epoch
 
-    def on_train_batch_end(self, batch, logs=None):        
+    def on_train_batch_end(self, batch, logs=None):   
+        self.step_counter += 1
+        if self.step_counter % self.log_every_n_steps != 0:
+            return
+        
         logs = logs or {}
         if "loss" not in logs.keys(): 
             raise Exception("A loss is required")
-        
-        if self.step_counter % self.log_every_n_steps == 0: 
-            yprov4ml.log_proof_of_learning_step(self.model_label, self.model, logs["loss"], batch, step=self.current_epoch, context=yprov4ml.Context.TRAINING)
-        else: 
-            self.step_counter += 1
+        yprov4ml.log_proof_of_learning_step(self.model_label, self.model_ptr, batch, step=self.current_epoch, context=yprov4ml.Context.TRAINING)

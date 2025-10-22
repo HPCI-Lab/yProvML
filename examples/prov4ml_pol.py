@@ -21,16 +21,16 @@ yprov4ml.start_run(
 # Seed setting, not sure all of these are necessary
 SEED = 42
 yprov4ml.log_param("seed", SEED)
-tf.random.set_seed(SEED)
-np.random.seed(SEED)
-random.seed(SEED)
+# tf.random.set_seed(SEED)
+# np.random.seed(SEED)
+# random.seed(SEED)
 
 # Log source code and main file for reproducible execution
 yprov4ml.log_execution_command("python", "prov4ml_pol.py")
 yprov4ml.log_source_code("examples/prov4ml_pol.py")
 
 (ds_train, ds_test), ds_info = tfds.load(
-    'mnist',
+    'cifar10',
     split=['train', 'test'],
     shuffle_files=True,
     as_supervised=True,
@@ -56,17 +56,15 @@ ds_test = ds_test.cache()
 ds_test = ds_test.prefetch(tf.data.AUTOTUNE)
 
 model = tf.keras.models.Sequential([
-    tf.keras.layers.Flatten(input_shape=(28, 28)),
-    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Flatten(input_shape=(32, 32, 3)),
+    tf.keras.layers.Dense(256, activation='relu'),
+    tf.keras.layers.Dense(64, activation='relu'),
     tf.keras.layers.Dense(10)
 ])
 
-optimizer = tf.keras.optimizers.Adam(0.001)
 loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 loss_fn2 = tf.keras.losses.MeanSquaredError()
 
-# For POL, at least one loss is necessary
-# Pliz don't have more than one, I haven't tested it :'(
 model.compile(
     optimizer=tf.keras.optimizers.Adam(0.001),
     loss=[loss_fn, loss_fn2],
@@ -91,5 +89,5 @@ model.fit(
 yprov4ml.end_run(
     create_graph=True, 
     create_svg=True, 
-    crate_ro_crate=True
+    crate_ro_crate=False
 )

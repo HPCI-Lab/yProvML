@@ -31,15 +31,31 @@ def find_pol(path):
         return pols1
 
 def validate_threshold(pols1, pols2): 
-    distaces = []
+    distances = []
+    ps1 = []
+    ps2 = []
     for pol1, pol2 in zip(pols1, pols2): 
         p1 = np.load(pol1)
         p2 = np.load(pol2)
-        distaces.append(np.linalg.norm(p1 - p2))
+        # raw = np.frombuffer(b"".join(p2.tolist()), dtype=np.uint8)
+        # bf16 = raw.view(np.uint16)
+        # p2 = np.frombuffer(np.left_shift(bf16.astype(np.uint32), 16).tobytes(), dtype=np.float32)
 
-    import matplotlib.pyplot as plt
-    plt.plot(distaces)
-    plt.show()
+        ps1.append(np.linalg.norm(p1).mean())
+        ps2.append(np.linalg.norm(p2).mean())
+        distances.append(abs(np.linalg.norm(p1) - np.linalg.norm(p2)))
+
+    return max(distances) < 1.0
+
+    # import pandas as pd
+    # ps1=pd.Series(ps1).cumsum()
+    # ps2=pd.Series(ps2).cumsum()
+
+    # import matplotlib.pyplot as plt
+    # plt.plot(distances)
+    # # plt.plot(ps1)
+    # # plt.plot(ps2)
+    # plt.show()
 
 
 def main(f1, f2): 

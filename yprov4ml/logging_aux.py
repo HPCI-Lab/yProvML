@@ -300,16 +300,15 @@ def log_dataset(
     d[f"{dataset_label}_dataset_stat_total_samples"] = str(num_samples)
     e.add_attributes(d)
 
-def log_proof_of_learning_step(model_label, model, loss, batch, step, context=None): 
+def log_proof_of_learning_step(model_label, model, batch=None, step=None, context=None): 
     def hash_tensor(tensor):
         arr = tf.reshape(tensor, [-1]).numpy()
         return hashlib.sha256(arr.tobytes()).hexdigest()
         
-    step_proof = {
-        'step': batch,
-        'loss': float(loss),
-        'weights_hash': hash_tensor(model.trainable_variables[0])
-    }
+    step_proof = {}
+    step_proof['step'] = batch
+    step_proof['weights_hash'] = hash_tensor(model.trainable_variables[0]), 
+    
     log_metric(f"{model_label}_pol", step_proof, context=context, step=step)
 
     path = os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, f"{model_label}_pol_checkpoints", f"{model_label}_pol_checkpoint_{step}_{batch}.npy")
@@ -319,22 +318,10 @@ def log_proof_of_learning_step(model_label, model, loss, batch, step, context=No
 
 
 def log_execution_command(cmd: str, path : str) -> None:
-    """
-    Logs the execution command.
-    
-    Args:
-        cmd (str): The command to be logged.
-    """
     path = os.path.join("/workspace", f"{PROV4ML_DATA.CLEAN_EXPERIMENT_NAME}_{PROV4ML_DATA.RUN_ID}", "artifacts", path)
     log_param("prov-ml:execution_command", cmd + " " + path)
 
 def log_source_code(path: Optional[str] = None) -> None:
-    """
-    Logs the source code location, either from a Git repository or a specified path.
-    
-    Args: 
-        path (Optional[str]): The path to the source code. If None, attempts to retrieve from Git.
-    """
     PROV4ML_DATA.add_source_code(path)
 
 def create_context(context : str, is_subcontext_of=None): 
