@@ -22,5 +22,4 @@ lxml
 rdflib
 plotly
 scikit-learn
-textwrap
 shap
