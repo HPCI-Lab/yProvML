@@ -21,6 +21,6 @@ zarr
 lxml
 rdflib
 plotly
-sklearn
+scikit-learn
 textwrap
 shap
