@@ -1,4 +1,5 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 codecarbon
 fvcore
 geocoder
@@ -22,6 +23,41 @@ zarr==3.1.3
 lxml
 rdflib
 nvidia-ml-py
+=======
+codecarbon
+fvcore
+geocoder
+gpustat
+GPUtil
+lightning
+netCDF4
+numpy
+nvitop
+pandas
+psutil
+pydot
+torch
+torchvision
+tqdm
+typing_extensions
+rocrate
+aenum
+prov
+zarr
+lxml
+rdflib
+plotly
+scikit-learn
+shap
+<<<<<<< Updated upstream
+=======
+streamlit
+
+
+
+
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 =======
 codecarbon
 fvcore
