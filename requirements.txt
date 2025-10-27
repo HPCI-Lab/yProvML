@@ -25,3 +25,4 @@ plotly
 scikit-learn
 shap
 streamlit
+matplotlib
