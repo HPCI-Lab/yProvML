@@ -1,11 +1,8 @@
-<<<<<<< Updated upstream
-=======
 # examples/cnn_training.py
 import argparse, random, sys, time, os, csv
 from pathlib import Path
 
 import numpy as np
->>>>>>> Stashed changes
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -13,71 +10,39 @@ from torchvision.datasets import CIFAR10
 from torchvision import transforms
 from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
-from prov4ml.constants import PROV4ML_DATA
-from prov4ml.datamodel.metric_type import get_file_type
-import inspect, prov4ml.datamodel.metric_data as md
 
 # local prov4ml
 sys.path.append("../yProvML")
 import prov4ml
 from prov4ml.datamodel.metric_type import MetricsType
-from prov4ml.constants import PROV4ML_DATA
 
-# --- helpers to tolerate enum naming across versions ---
+# --- tolerate enum names across prov4ml versions ---
 def _ctx_training():
     return getattr(prov4ml, "Contexts", getattr(prov4ml, "Context", None)).TRAINING
 def _ctx_validation():
     return getattr(prov4ml, "Contexts", getattr(prov4ml, "Context", None)).VALIDATION
 def _ctx_models():
     return getattr(prov4ml, "Contexts", getattr(prov4ml, "Context", None)).MODELS
->>>>>>> Stashed changes
 
-PATH_DATASETS = "./data"
-BATCH_SIZE = 32
-EPOCHS = 5
-DEVICE = "cpu"
 
-class CNN(nn.Module): 
-        
+# ----------------- Model -----------------
+class CNN(nn.Module):
     def __init__(self, out_classes=10):
         super().__init__()
         self.sequential = nn.Sequential(
-            nn.Conv2d(3,20,5),
+            nn.Conv2d(3, 20, 5),
             nn.ReLU(),
-            nn.Conv2d(20,64,5),
-            nn.ReLU()
+            nn.Conv2d(20, 64, 5),
+            nn.ReLU(),
         )
         self.mlp = nn.Linear(36864, out_features=out_classes)
 
-    def forward(self, x): 
+    def forward(self, x):
         x = self.sequential(x)
         x = x.reshape(x.shape[0], -1)
-        x = self.mlp(x)
-        return x
+        return self.mlp(x)
 
 
-<<<<<<< Updated upstream
-model = CNN()
-
-
-tform = transforms.Compose([
-    transforms.RandomRotation(10), 
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomVerticalFlip(),
-    transforms.ToTensor()
-])
-
-train_ds = CIFAR10(PATH_DATASETS, train=True, download=True, transform=tform)
-train_ds = Subset(train_ds, range(BATCH_SIZE*200))
-train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE)
-yprov4ml.log_dataset("train_loader", train_loader)
-
-
-test_ds = CIFAR10(PATH_DATASETS, train=False, download=True, transform=tform)
-test_ds = Subset(test_ds, range(BATCH_SIZE*100))
-test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE)
-yprov4ml.log_dataset("test_loader", test_loader)
-=======
 # ---------- dataset helper: download only if missing ----------
 def _dataset(root: str, train: bool, tform):
     cifar_root = os.path.join(root, "cifar-10-batches-py")
@@ -124,20 +89,26 @@ def make_scheduler(optimizer, args, steps_per_epoch=None):
 
 
 class LRLogger:
-    """Append-only CSV logger for learning rate trace."""
+    """Append-only CSV logger for learning rate trace + track min/max."""
     def __init__(self, out_dir: str | None, exp_id: str | None):
         self.enabled = out_dir is not None
+        self.lr_min = float("inf")
+        self.lr_max = float("-inf")
         if not self.enabled:
+            self.path = None
             return
         os.makedirs(out_dir, exist_ok=True)
         self.path = os.path.join(out_dir, f"{(exp_id or 'exp')}.csv")
         with open(self.path, "w", newline="") as f:
-            w = csv.writer(f); w.writerow(["step_type", "index", "lr"])
+            w = csv.writer(f)
+            w.writerow(["step_type", "index", "lr"])
 
     def log(self, step_type: str, index: int, optimizer):
+        lr = float(optimizer.param_groups[0]["lr"])
+        self.lr_min = min(self.lr_min, lr)
+        self.lr_max = max(self.lr_max, lr)
         if not self.enabled:
             return
-        lr = optimizer.param_groups[0]["lr"]
         with open(self.path, "a", newline="") as f:
             csv.writer(f).writerow([step_type, index, lr])
 
@@ -185,8 +156,10 @@ def main():
         unify_experiments=True
     )
 
-    print(f"[run {args.run_id}] device={args.device} bs={args.batch_size} lr={args.lr} "
-          f"epochs={args.epochs} scheduler={args.scheduler}")
+    print(
+        f"[run {args.run_id}] device={args.device} bs={args.batch_size} "
+        f"lr={args.lr} epochs={args.epochs} scheduler={args.scheduler}"
+    )
 
     # Data
     tform = transforms.Compose([
@@ -220,7 +193,7 @@ def main():
 
     # Training loop
     for epoch in range(args.epochs):
-        # manual epoch timing (yProv4ML 'log_current_execution_time' without start/stop API)
+        # Manual epoch timing
         t0 = time.time()
 
         model.train()
@@ -263,14 +236,14 @@ def main():
             scheduler.step(avg_val)
             lrlog.log("epoch", epoch, optim)
 
-        # log epoch timing as metric (ms)
+        # epoch timing (ms)
         epoch_ms = (time.time() - t0) * 1000.0
         prov4ml.log_metric("train_epoch_time_ms", float(epoch_ms), context=_ctx_training(), step=epoch)
 
         # training loss (last batch) as epoch metric
         prov4ml.log_metric("MSE_train", float(loss.item()), context=_ctx_training(), step=epoch)
 
-        # system & carbon metrics (once per epoch is fine; call more often if you want finer sampling)
+        # system & carbon metrics (once per epoch)
         try:
             prov4ml.log_system_metrics(_ctx_training(), step=epoch)
         except Exception:
@@ -287,15 +260,19 @@ def main():
         # incremental model snapshot
         prov4ml.save_model_version("cifar_model_version", model, _ctx_models(), epoch)
 
-    # Final logs of static params
+    # Final logs of static params + lr summary
     prov4ml.log_model("cifar_model_final", model, log_model_layers=True, is_input=False)
     prov4ml.log_metric("param_batch_size", float(args.batch_size), context=_ctx_training(), step=0)
     prov4ml.log_metric("param_lr", float(args.lr), context=_ctx_training(), step=0)
     prov4ml.log_metric("param_epochs", float(args.epochs), context=_ctx_training(), step=0)
     prov4ml.log_metric("param_seed", float(args.seed), context=_ctx_training(), step=0)
 
+    # summarize scheduler behavior for downstream analysis
+    if np.isfinite(lrlog.lr_min) and np.isfinite(lrlog.lr_max):
+        prov4ml.log_metric("lr_min", float(lrlog.lr_min), context=_ctx_training(), step=0)
+        prov4ml.log_metric("lr_max", float(lrlog.lr_max), context=_ctx_training(), step=0)
 
-    print(f"[run {args.run_id}] Val loss: {avg_loss:.4f} | Val acc: {acc:.4f}")
+    print(f"[run {args.run_id}] Final Val loss: {avg_val:.4f} | Val acc: {acc:.4f}")
 
     # End run + graphs
     prov4ml.end_run(create_graph=True, create_svg=True)
