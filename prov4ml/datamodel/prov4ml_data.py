@@ -44,10 +44,12 @@ class Prov4MLData:
         self.save_metrics_after_n_logs = 100
         self.csv_separator = ","
 
-        # unified storage controls
+        # unified controls
         self.unify_experiments = False
         self.UNIFY_BASE_EXPERIMENT_DIR: Optional[str] = None
-        self.EXPERIMENT_VERSION: int = 0  # index used for 'exp' dim
+        self.EXPERIMENT_VERSION: int = 0 
+        self.PER_RUN_SUFFIX: str = "0"          
+        self.PROV_MERGED_PATH: Optional[str] = None
 
     # ------------------------ lifecycle ------------------------
     def start_run(
@@ -128,6 +130,8 @@ class Prov4MLData:
         self.use_compressor = use_compressor
         self.csv_separator = csv_separator
         self.unify_experiments = bool(unify_experiments)
+        self.PER_RUN_SUFFIX = str(self.RUN_ID)
+        self.PROV_MERGED_PATH = os.path.join(self.EXPERIMENT_DIR, "prov_merged.json")
 
         # CSV policy: never unify
         if self.metrics_file_type == MetricsType.CSV and self.unify_experiments:
