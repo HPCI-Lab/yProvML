@@ -1,0 +1,2 @@
+exp,ACC_val,MSE_train,MSE_val,cpu_usage,disk_usage,memory_usage,param_batch_size,param_epochs,param_lr,param_seed,epochs
+7,0.8600000143051147,0.02172982320189476,0.03228422999382019,49.0,1.600000023841858,13.699999809265137,32.0,7.0,0.0003079911693930626,58267.0,7
