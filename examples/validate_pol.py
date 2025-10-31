@@ -1,83 +1,76 @@
-import pandas as pd
+#!/usr/bin/env python3
+import os
 import numpy as np
 import argparse
-import os
 
-def validate_exact(pols1, pols2): 
-    f1 = pd.read_csv(pols1, sep=";")
-    f2 = pd.read_csv(pols2, sep=";")
+# === TROVA I POL FILE NELLA STRUTTURA ===
+def find_pol(path):
+    path = os.path.join(path, "artifacts_GR0")
+    pol_items = [p for p in os.listdir(path) if "_pol_" in p]
+    if not pol_items:
+        raise FileNotFoundError(f"No POL files found in {path}")
+    pol_path = os.path.join(path, pol_items[0])
 
-    f1["Context.TRAINING"] = f1["Context.TRAINING"].map(lambda x: eval(x))
-    f2["Context.TRAINING"] = f2["Context.TRAINING"].map(lambda x: eval(x))
-    proof1 = pd.DataFrame(f1["Context.TRAINING"].tolist(), columns=["step", "loss", "weights_hash"])
-    proof2 = pd.DataFrame(f2["Context.TRAINING"].tolist(), columns=["step", "loss", "weights_hash"])
-
-    for step in range(len(proof1)):
-        p1 = proof1.iloc[step]
-        p2 = proof2.iloc[step]
-        if p1["weights_hash"] != p2["weights_hash"]:
-            print(f"❌ Mismatch at step {step} in validate_exact")
-            return False
+    if pol_path.endswith(".csv"):
+        return pol_path
     else:
-        print("✅ Perfect match — proof validated!")
-    return True
+        # Directory con più file .npy
+        return [os.path.join(pol_path, f)
+                for f in os.listdir(pol_path)
+                if os.path.isfile(os.path.join(pol_path, f)) and f.endswith(".npy")]
 
-def find_pol(path): 
-    pol1 = os.path.join(path, [p for p in os.listdir(path) if "_pol_" in p][0])
-    if pol1.endswith(".csv"): 
-        return pol1
-    else: 
-        pols1 = [os.path.join(pol1, f) for f in os.listdir(pol1)]
-        return pols1
+# === CALCOLA LA SOGLIA AL 95° PERCENTILE ===
+def calculate_threshold(distances_list):
+    all_distances = []
+    for distances in distances_list:
+        all_distances.extend(distances)
+    threshold = np.percentile(all_distances, 95)
+    print(f"[INFO] Computed 95th percentile threshold: {threshold:.6f}")
+    return threshold
 
-def validate_threshold(pols1, pols2): 
+def dynamic_threshold(pols1, pols2, mode='combined'):
+    if len(pols1) != len(pols2):
+        raise ValueError(f"List lengths differ: {len(pols1)} vs {len(pols2)}")
+
     distances = []
-    ps1 = []
-    ps2 = []
+    threshold = None
     for pol1, pol2 in zip(pols1, pols2): 
         p1 = np.load(pol1)
         p2 = np.load(pol2)
-        # raw = np.frombuffer(b"".join(p2.tolist()), dtype=np.uint8)
-        # bf16 = raw.view(np.uint16)
-        # p2 = np.frombuffer(np.left_shift(bf16.astype(np.uint32), 16).tobytes(), dtype=np.float32)
-
-        ps1.append(np.linalg.norm(p1).mean())
-        ps2.append(np.linalg.norm(p2).mean())
+        threshold = np.mean(p1) + 3 * np.std(p1)
         distances.append(abs(np.linalg.norm(p1) - np.linalg.norm(p2)))
-
-    return max(distances) < 1.0
-
-    # import pandas as pd
-    # ps1=pd.Series(ps1).cumsum()
-    # ps2=pd.Series(ps2).cumsum()
-
-    # import matplotlib.pyplot as plt
-    # plt.plot(distances)
-    # # plt.plot(ps1)
-    # # plt.plot(ps2)
-    # plt.show()
-
-
-def main(f1, f2): 
-    proof_path1 = os.path.join(f1, "metrics_GR0")
-    proof_path2 = os.path.join(f2, "metrics_GR0")
-    pols1 = find_pol(proof_path1)
-    pols2 = find_pol(proof_path2)
+    distances = np.array(distances)
     
-    valid = validate_exact(pols1, pols2)
+    # Dynamic thresholding
+    if mode == 'relative':
+        print(max(distances), min(distances), threshold)
+        score = 0.0 if np.any(distances < threshold) else 1.0
+    elif mode == 'quantile':
+        threshold = np.quantile(distances, 0.95)
+        score = np.mean(distances < threshold)
+    else: 
+        raise Exception(f"Unknown mode: {mode}")
 
-    proof_path1 = os.path.join(f1, "artifacts_GR0")
-    proof_path2 = os.path.join(f2, "artifacts_GR0")
-    pols1 = find_pol(proof_path1)
-    pols2 = find_pol(proof_path2)
+    return 1.0 - float(score)
 
-    valid = validate_threshold(pols1, pols2)
+# === MAIN ===
+def main(run_official, run_noseed, mode):
+    # Trova file .npy
+    pols_official = find_pol(run_official)
+    pols_noseed = find_pol(run_noseed)
 
+    score = dynamic_threshold(pols_official, pols_noseed, mode=mode)
 
+    if score > 0.99:    
+        print(f"✅ Safe / equivalent run ({score})")
+    else:
+        print(f"❌ Divergent or uncertified run ({score})")
 
-if __name__ == "__main__": 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('filename_1')
-    parser.add_argument('filename_2')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Validate multiple PVS4Provenance runs with automatic threshold")
+    parser.add_argument("run_official", help="Path to official run folder")
+    parser.add_argument("run_claimed", help="Path to unconfirmed run")
+    parser.add_argument("mode", help="[relative|quantile]")
     args = parser.parse_args()
-    main(args.filename_1, args.filename_2)
+
+    main(args.run_official, args.run_claimed, args.mode)

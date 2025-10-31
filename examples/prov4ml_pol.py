@@ -30,7 +30,7 @@ yprov4ml.log_execution_command("python", "prov4ml_pol.py")
 yprov4ml.log_source_code("examples/prov4ml_pol.py")
 
 (ds_train, ds_test), ds_info = tfds.load(
-    'cifar10',
+    'mnist',
     split=['train', 'test'],
     shuffle_files=True,
     as_supervised=True,
@@ -56,9 +56,9 @@ ds_test = ds_test.cache()
 ds_test = ds_test.prefetch(tf.data.AUTOTUNE)
 
 model = tf.keras.models.Sequential([
-    tf.keras.layers.Flatten(input_shape=(32, 32, 3)),
-    tf.keras.layers.Dense(256, activation='relu'),
-    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Flatten(input_shape=(28, 28)),
+    # tf.keras.layers.Dense(256, activation='relu'),
+    tf.keras.layers.Dense(128, activation='relu'),
     tf.keras.layers.Dense(10)
 ])
 
@@ -72,7 +72,7 @@ model.compile(
 )
 yprov4ml.log_model("model_Sequential", model)
 
-EPOCHS = 6
+EPOCHS = 5
 yprov4ml.log_param("num_epochs", EPOCHS)
 
 model.fit(
