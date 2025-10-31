@@ -125,6 +125,9 @@ class Prov4MLData:
             c.add_attributes({f'{self.PROV_PREFIX}:level':1})
         return c
 
+    def _set_ctx_or_default(self, ctx): 
+        return ctx or self.PROV_JSON_NAME
+
     def _init_root_context(self): 
         self.root_provenance_doc = prov.ProvDocument()
         self.root_provenance_doc.add_namespace('context', 'context')
@@ -168,11 +171,11 @@ class Prov4MLData:
         self._add_ctx(f"context:"+self.PROV_JSON_NAME, self.PROV_JSON_NAME, 'std.time')
 
     def _format_activity_name(self, context : Optional[Context] = None, source: Optional[str]=None): 
-        if context is None: context = self.PROV_JSON_NAME
+        context = self._set_ctx_or_default(context)
         return f"context:{context}" + (f"-source:{source}" if source else "")
 
     def _format_artifact_name(self, label : str, context : Optional[Context] = None, source: Optional[str]=None): 
-        if context is None: context = self.PROV_JSON_NAME
+        context = self._set_ctx_or_default(context)
         return f"{self.PROV_PREFIX}:{label}-context:{context}" + (f"-source:{source}" if source else "")
 
     def _log_input(self, path : str, context : Context, source: Optional[str]=None, attributes : dict={}) -> prov.ProvEntity:
@@ -205,7 +208,7 @@ class Prov4MLData:
             repo = _get_git_remote_url()
             if repo is not None:
                 commit_hash = _get_git_revision_hash()
-                log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", f"{repo}/{commit_hash}")
+                log_param(f"{self.PROV_PREFIX}:source_code", f"{repo}/{commit_hash}")
         else:
             p = Path(path)
             if p.is_file():
@@ -219,14 +222,13 @@ class Prov4MLData:
         self, 
         metric: str, 
         value: Any, 
-        step: Optional[int] = None, 
+        step: int = 0, 
         context: Optional[Any] = None, 
         source: Optional[str] = None, 
     ) -> None:
         if not self.is_collecting: return
 
-        if context is None: context = self.PROV_JSON_NAME
-        if step is None: step = 0
+        context = self._set_ctx_or_default(context)
 
         if (metric, context) not in self.metrics:
             self.metrics[(metric, context)] = MetricInfo(metric, context, source=source, use_compressor=self.use_compressor)
@@ -260,17 +262,34 @@ class Prov4MLData:
         """
         if not self.is_collecting: return
 
-        if context is None: context = self.PROV_JSON_NAME
+        context = self._set_ctx_or_default(context)
 
         root_ctx = self._format_activity_name(self.PROV_JSON_NAME, None)
         current_activity = self._add_ctx(root_ctx, context, source)
         current_activity.add_attributes({parameter_name:str(parameter_value)})
 
+    def _log_artifact_copy(self, artifact_path, is_input, is_model, context, source): 
+        try: 
+            path = Path(artifact_path)
+            newart_path = os.path.join(self.ARTIFACTS_DIR, path.name)
+            if path.is_file():
+                shutil.copy(path, newart_path)
+            else:  
+                shutil.copytree(path, newart_path)
+
+            original = self.add_artifact("Original_" + path.name, str(path), log_copy_in_prov_directory=False, is_model=is_model, is_input=is_input, source=source, context=context)
+            copied = self.add_artifact(path.name, newart_path, log_copy_in_prov_directory=False, is_model=is_model, is_input=is_input, source=source, context=context)
+            copied.wasDerivedFrom(original)
+            return copied
+        except: 
+            Exception(f">_log_artifact_copy: log_copy_in_prov_directory was True but value is not a valid Path: {artifact_path}")
+
+
     def add_artifact(
         self, 
         artifact_name: str, 
         artifact_path: str, 
-        step: Optional[int] = None, 
+        step: int = 0, 
         context: Optional[Any] = None,
         source: Optional[str] = None,
         is_input : bool = False, 
@@ -279,29 +298,10 @@ class Prov4MLData:
     ) -> prov.ProvEntity:
         if not self.is_collecting: return
 
-        if context is None: context = self.PROV_JSON_NAME
-
-        if not isinstance(artifact_path, str): 
-            print(artifact_path)
-            raise AttributeError(f">add_artifact({artifact_path}): the parameter \"artifact_path\" has to be a string")
+        context = self._set_ctx_or_default(context)
 
         if log_copy_in_prov_directory: 
-            try: 
-                path = Path(artifact_path)
-                original = self.add_artifact("Original_" + path.name, str(path), log_copy_in_prov_directory=False, is_model=is_model, is_input=is_input, source=source, context=context)
-                copied = self.add_artifact(path.name, os.path.join(self.ARTIFACTS_DIR, path.name), log_copy_in_prov_directory=False, is_model=is_model, is_input=True, source=source, context=context)
-                copied.wasDerivedFrom(original)
-
-                newart_path = os.path.join(self.ARTIFACTS_DIR, path.name)
-                if path.is_file():
-                    shutil.copy(path, newart_path)
-                else:  
-                    shutil.copytree(path, newart_path)
-                artifact_path = newart_path
-
-                return copied
-            except: 
-                Exception(f">add_artifact: log_copy_in_prov_directory was True but value is not a valid Path: {artifact_path}")
+            return self._log_artifact_copy(artifact_path, is_input, is_model, context, source)
 
         artifact_name = self._format_artifact_name(artifact_name, context, source)
         self.artifacts[(artifact_name, context)] = ArtifactInfo(artifact_name, artifact_path, step, context=context, source=source, is_model=is_model)
@@ -313,7 +313,7 @@ class Prov4MLData:
 
         if artifact_path: 
             file_size = os.path.getsize(artifact_path) / (1024*1024)
-            attributes[f'{self.PROV_PREFIX}:file_size_in_mb'] = file_size
+            attributes.setdefault(f'{self.PROV_PREFIX}:file_size_in_mb', file_size)
 
         if is_input: 
             attributes.setdefault(f'{self.PROV_PREFIX}:role','input')

@@ -45,6 +45,13 @@ def save_prov_file(
         path_svg = os.path.join(PROV4ML_DATA.EXPERIMENT_DIR, svg_filename)
         os.system(f"dot -Tsvg {path_dot} > {path_svg}")
 
+def _requirements_lookup(path): 
+        for root, _, filenames in os.walk(path):
+            for filename in filenames:
+                if filename == "requirements.txt": 
+                    PROV4ML_DATA.add_artifact("requirements", os.path.join(root, filename), step=0, context=None, is_input=True)
+                    return True
+        return False
 
 from prov.model import (
     ProvException,
