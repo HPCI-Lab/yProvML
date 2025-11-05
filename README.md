@@ -21,7 +21,7 @@ It allows users to create provenance graphs from the logged information, and sav
 
 ![Example](./assets/example.png)
 
-The image shown above has been generated from the [example](./examples/mlflow_lightning.py) program provided in the ```example``` directory.
+The image shown above has been generated from the [example](./examples/prov4ml_torch.py) program provided in the ```example``` directory.
 
 ## Metrics Visualization
 
