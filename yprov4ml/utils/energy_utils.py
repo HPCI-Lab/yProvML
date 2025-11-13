@@ -38,6 +38,6 @@ def stop_carbon_tracked_block() -> Any:
     Returns:
         Any: The total emissions tracked.
     """
-    _ = TRACKER.stop()
+    #_ = TRACKER.stop()
     total_emissions = TRACKER._prepare_emissions_data()
     return total_emissions
