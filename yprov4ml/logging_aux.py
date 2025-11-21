@@ -137,12 +137,11 @@ def _get_model_layers_description(model_name : str, model: Union[torch.nn.Module
     path = os.path.join(PROV4ML_DATA.ARTIFACTS_DIR, model_name)
     if not os.path.exists(path):
         os.makedirs(path, exist_ok=True)
-    with open(f"{path}/{model_name}_layers_description.json", "w") as fp:
+    path = os.path.join(path, f"{model_name}_layers_description.json")
+    with open(path, "w") as fp:
         json.dump(mo , fp) 
 
-    return {
-        "layers_description_path": f"{path}/{model_name}_layers_description.json"
-    }
+    return {"layers_description_path": path}
 
 def log_model(
         model_name: str, 
@@ -307,11 +306,13 @@ def save_model_version(
     # count all models with the same name stored at "path"
     if incremental: 
         num_files = len([file for file in os.listdir(path) if str(file).startswith(model_name)])
-        torch.save(model.state_dict(), f"{path}/{model_name}_{num_files}.pth")
-        return log_artifact(f"{model_name}_{num_files}", f"{path}/{model_name}_{num_files}.pth", context=context, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=is_input)
+        fn = os.path.join(path, f"{model_name}_{num_files}.pt")
+        torch.save(model.state_dict(), fn)
+        return log_artifact(f"{model_name}_{num_files}", fn, context=context, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=is_input)
     else: 
-        torch.save(model.state_dict(), f"{path}/{model_name}.pth")
-        return log_artifact(model_name, f"{path}/{model_name}.pth", context=context, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=is_input)
+        fn = os.path.join(path, f"{model_name}.pt")
+        torch.save(model.state_dict(), fn)
+        return log_artifact(model_name, fn, context=context, step=step, log_copy_in_prov_directory=False, is_model=True, is_input=is_input)
 
 def log_dataset(
         dataset_label : str, 
@@ -358,7 +359,7 @@ def log_execution_command(cmd: str, path : str) -> None:
     Args:
         cmd (str): The command to be logged.
     """
-    path = os.path.join("/workspace", f"{PROV4ML_DATA.CLEAN_EXPERIMENT_NAME}_{PROV4ML_DATA.RUN_ID}", "artifacts", path)
+    path = os.path.join("", "workspace", f"{PROV4ML_DATA.CLEAN_EXPERIMENT_NAME}_{PROV4ML_DATA.RUN_ID}", "artifacts", path)
     log_param("prov-ml:execution_command", cmd + " " + path)
 
 def log_source_code(path: Optional[str] = None) -> None:

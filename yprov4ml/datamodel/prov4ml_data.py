@@ -187,7 +187,7 @@ class Prov4MLData:
             repo = _get_git_remote_url()
             if repo is not None:
                 commit_hash = _get_git_revision_hash()
-                log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", f"{repo}/{commit_hash}")
+                log_param(f"{PROV4ML_DATA.PROV_PREFIX}:source_code", os.path.join(repo, commit_hash))
         else:
             p = Path(path)
             if p.is_file():
@@ -263,7 +263,12 @@ class Prov4MLData:
             context = self.PROV_JSON_NAME
 
         current_activity = get_activity(self.root_provenance_doc,"context:"+ str(context))
-        current_activity.add_attributes({parameter_name:str(parameter_value)})
+        current_activity.add_attributes({
+            f"{parameter_name}": str({
+                f"{self.PROV_PREFIX}:name: ": str(parameter_value), 
+                f"{self.PROV_PREFIX}:dtype": str(type(parameter_value)), 
+            })
+        })
 
     def add_artifact(
         self, 

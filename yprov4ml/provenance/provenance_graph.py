@@ -74,7 +74,7 @@ def create_rocrate_in_dir(directory):
 
     for (d, _, fs) in os.walk(directory): 
         for f in fs: 
-            file_path = d + "/" + f
+            file_path = os.path.join(d, f)
             if Path(file_path).exists():
                 property = get_properties_from_file(file_path)
                 property["@type"] = "File" 

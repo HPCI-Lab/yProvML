@@ -95,7 +95,7 @@ def end_run(
     log_execution_end_time()
 
     found = False
-    for root, _, filenames in os.walk('./'):
+    for root, _, filenames in os.walk('.'):
         for filename in filenames:
             if filename == "requirements.txt": 
                 PROV4ML_DATA.add_artifact("requirements", os.path.join(root, filename), step=0, context=None, is_input=True)

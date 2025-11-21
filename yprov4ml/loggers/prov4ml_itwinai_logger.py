@@ -44,7 +44,7 @@ class ProvMLItwinAILogger(Logger):
         self,
         prov_user_namespace="www.example.org",
         experiment_name="experiment_name",
-        provenance_save_dir="mllogs/prov_logs",
+        provenance_save_dir="mllogs",
         save_after_n_logs: Optional[int] = 100,
         create_graph: Optional[bool] = True,
         create_svg: Optional[bool] = True,

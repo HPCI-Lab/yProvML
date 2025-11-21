@@ -12,7 +12,7 @@ def main(dot_file : str, out_file : Optional[str]):
     if not out_file.endswith(".svg"): 
         out_file += ".svg"
 
-    path_svg = os.path.join("./", out_file)
+    path_svg = os.path.join(".", out_file)
     os.system(f"dot -Tsvg {dot_file} > {path_svg}")
     
 if __name__ == '__main__':

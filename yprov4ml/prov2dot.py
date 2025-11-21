@@ -18,7 +18,7 @@ def main(prov_file : str, out_file : Optional[str]):
     with open(prov_file, 'r') as f:
         doc = ProvDocument.deserialize(f)
 
-    path_dot = os.path.join("./", out_file)
+    path_dot = os.path.join(".", out_file)
     with open(path_dot, 'w') as prov_dot:
         prov_dot.write(custom_prov_to_dot(doc).to_string())
     
