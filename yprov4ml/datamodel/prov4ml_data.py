@@ -264,9 +264,9 @@ class Prov4MLData:
 
         current_activity = get_activity(self.root_provenance_doc,"context:"+ str(context))
         current_activity.add_attributes({
-            f"{parameter_name}": str({
-                f"{self.PROV_PREFIX}:name: ": str(parameter_value), 
-                f"{self.PROV_PREFIX}:dtype": str(type(parameter_value)), 
+            parameter_name: str({
+                "value:": parameter_value, 
+                "dtype": type(parameter_value).__name__, 
             })
         })
 
